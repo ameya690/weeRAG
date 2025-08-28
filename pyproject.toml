@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wee"
+version = "0.1.0"
+description = "wee: tiny, teachable LLM/RAG foundations"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["wee*"]

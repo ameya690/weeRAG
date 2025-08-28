@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+tests/test_tokenizer.py
+wee/__init__.py
+wee/attention.py
+wee/bm25.py
+wee/chunk.py
+wee/tokenizer.py
+wee/transformer.py
+wee.egg-info/PKG-INFO
+wee.egg-info/SOURCES.txt
+wee.egg-info/dependency_links.txt
+wee.egg-info/requires.txt
+wee.egg-info/top_level.txt
