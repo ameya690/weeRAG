@@ -5,6 +5,9 @@ wee/__init__.py
 wee/attention.py
 wee/bm25.py
 wee/chunk.py
+wee/context.py
+wee/rerank.py
+wee/retriever.py
 wee/tokenizer.py
 wee/transformer.py
 wee.egg-info/PKG-INFO
