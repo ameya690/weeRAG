@@ -10,7 +10,7 @@ from .chunk import (
     chunk_by_tokens,
 )
 
-# Wave 2 (RAG kit)
+# RAG kit
 from .vectorstore import VectorStore
 from .retriever import Retriever
 from .context import pack_context
@@ -30,4 +30,16 @@ __all__ = [
     "Retriever",
     "pack_context",
     "Reranker",
+]
+
+from .weeeval import evaluate_qa, exact_match, max_f1, faithfulness, context_precision_recall
+from .weejudge import Judge, HeuristicJudge
+from .weecache import Cache, cached
+from .weetrace import Tracer
+
+__all__ += [
+    "evaluate_qa", "exact_match", "max_f1", "faithfulness", "context_precision_recall",
+    "Judge", "HeuristicJudge",
+    "Cache", "cached",
+    "Tracer",
 ]
