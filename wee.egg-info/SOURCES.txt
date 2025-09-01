@@ -10,6 +10,7 @@ wee/rerank.py
 wee/retriever.py
 wee/tokenizer.py
 wee/transformer.py
+wee/vectorstore.py
 wee.egg-info/PKG-INFO
 wee.egg-info/SOURCES.txt
 wee.egg-info/dependency_links.txt
