@@ -43,3 +43,15 @@ __all__ += [
     "Cache", "cached",
     "Tracer",
 ]
+
+# Wave 4
+from .quant import QuantLinear, quantize_model, size_report, eval_perplexity
+from .kv import upgrade_gpt_for_kv, generate_with_cache, save_kv, load_kv
+from .router import Router
+from .stream import app as stream_app
+
+__all__ += [
+    "QuantLinear","quantize_model","size_report","eval_perplexity",
+    "upgrade_gpt_for_kv","generate_with_cache","save_kv","load_kv",
+    "Router","stream_app",
+]
