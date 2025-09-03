@@ -55,3 +55,10 @@ __all__ += [
     "upgrade_gpt_for_kv","generate_with_cache","save_kv","load_kv",
     "Router","stream_app",
 ]
+
+# Wave 5
+from .graph import Graph
+from .synth import synth_qa
+from .guard import Guard
+
+__all__ += ["Graph", "synth_qa", "Guard"]

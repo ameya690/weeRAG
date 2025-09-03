@@ -4,7 +4,7 @@
 import math, time, torch
 from wee import Tokenizer, GPTConfig, GPT
 from wee import eval_perplexity, quantize_model, size_report
-
+from wee import upgrade_gpt_for_kv, generate_with_cache
 
 # 1) Tiny corpus
 corpus = (
@@ -24,6 +24,7 @@ ids = torch.tensor(tok.encode(corpus), dtype=torch.long)    # shape [N]
 # 3) Build model
 cfg = GPTConfig(vocab_size=tok.vocab_size, d_model=192, n_heads=4, n_layers=3, max_seq_len=256, dropout=0.1)
 model = GPT(cfg)
+upgrade_gpt_for_kv(model)   # swap in cacheable attention (weights preserved)
 
 # Helper to compute ppl on the corpus
 def ppl(m):
@@ -59,24 +60,12 @@ print("PPL (trained fp32):", round(ppl_trained, 3))
 
 # 5) Generate text (greedy or simple top-k sampling if available)
 def sample(model, prompt, max_new_tokens=80, temperature=0.8, top_k=40):
-    # If the model exposes generate, use it; otherwise do a simple loop.
-    if hasattr(model, "generate"):
-        input_ids = torch.tensor([tok.encode(prompt, add_special=True)], dtype=torch.long)
-        out = model.generate(input_ids, max_new_tokens=max_new_tokens)
-        return tok.decode(out[0].tolist())
-    else:
-        # fallback: manual sampling
-        ids_in = torch.tensor([tok.encode(prompt, add_special=True)], dtype=torch.long)
-        for _ in range(max_new_tokens):
-            logits, _ = model(ids_in, None)
-            next_logits = logits[:, -1, :] / max(temperature, 1e-6)
-            if top_k is not None:
-                v, _ = torch.topk(next_logits, k=min(top_k, next_logits.size(-1)))
-                next_logits[next_logits < v[:, [-1]]] = -float("inf")
-            probs = torch.softmax(next_logits, dim=-1)
-            next_id = torch.multinomial(probs, num_samples=1)
-            ids_in = torch.cat([ids_in, next_id], dim=1)
-        return tok.decode(ids_in[0].tolist())
+    import torch
+    ids_in = torch.tensor([tok.encode(prompt, add_special=True)], dtype=torch.long)
+    # Use our KV-cache generator (works for fp32 and after quantization)
+    out = generate_with_cache(model, ids_in, max_new_tokens=max_new_tokens,
+                              temperature=temperature, top_k=top_k)
+    return tok.decode(out[0].tolist())
 
 prompt = "How do I get relevant passages for a question?"
 print("\n== Generation after training (fp32) ==")
