@@ -1,44 +1,40 @@
-# wee — tiny, teachable LLM/RAG foundations (Wave 1)
+# 🪶 weeRAG — tiny, teachable LLM & RAG foundations
 
-Wave 1 modules included:
+**weeRAG** is a collection of small, readable implementations of building blocks behind  
+**LLMs (Large Language Models)** and **RAG (Retrieval-Augmented Generation)** pipelines.  
 
-- `wee.tokenizer.Tokenizer` — SentencePiece-like char-BPE with a word-boundary marker.
-- `wee.attention.MultiHeadAttention` — PyTorch multi-head attention + scaled-dot-product core.
-- `wee.transformer.GPT` — minimal GPT (decoder-only) with greedy sampling.
-- `wee.bm25.BM25` — dead-simple BM25 index/search.
-- `wee.chunk` — word/sentence/token chunkers.
+The design goal: *clarity over performance*. Each component is implemented in a single file, with minimal dependencies, so you can read, learn, and hack.
 
-## Install (editable)
+---
+
+## 📑 Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [1. Foundations](#1-foundations)
+- [2. RAG Toolkit](#2-rag-toolkit)
+- [3. Evaluation & Ops](#3-evaluation--ops)
+- [4. Performance & Scaling](#4-performance--scaling)
+- [5. Extras](#5-extras)
+- [License](#license)
+
+---
+
+## Overview
+
+Why break things into categories?
+
+- **Foundations** → the *core primitives* that any LLM or RAG pipeline builds on: tokenization, transformers, attention, lexical retrieval, chunking.  
+- **RAG Toolkit** → higher-level components specifically for retrieval pipelines: vector stores, retrievers, context packing, rerankers.  
+- **Evaluation & Ops** → how you measure, monitor, and operate RAG systems: metrics, judges, caches, tracing.  
+- **Performance & Scaling** → the tricks that make systems practical: quantization, KV caches, routers, streaming.  
+- **Extras** → goodies that extend RAG beyond basics: knowledge graphs, synthetic eval data, guardrails.
+
+---
+
+## Installation
 
 ```bash
+git clone <your-fork-or-repo> weeRAG
+cd weeRAG
 pip install -e .
-# requires torch for attention/transformer modules
-```
-
-## Quickstart
-
-```python
-from wee import Tokenizer, BM25, GPTConfig, GPT
-from wee import chunk_by_words, chunk_by_sentences, chunk_by_tokens
-
-# 1) Tokenizer
-tok = Tokenizer()
-tok.train(["hello world", "hello there"], vocab_size=200)
-ids = tok.encode("hello world")
-print(ids, tok.decode(ids))
-
-# 2) BM25
-bm = BM25()
-bm.add(["LLMs are fun", "RAG retrieves chunks", "Transformers attend to tokens"])
-print(bm.search("RAG tokens", k=2))
-
-# 3) Chunking
-text = "This is a sentence. Another sentence! And one more? Yep."
-print(chunk_by_sentences(text, max_chars=30, overlap=5))
-
-# 4) Transformer (toy)
-cfg = GPTConfig(vocab_size=tok.vocab_size, d_model=128, n_heads=4, n_layers=2, max_seq_len=64)
-model = GPT(cfg)
-```
-
-> Note: This is educational code with tiny, readable implementations—not optimized for production.
