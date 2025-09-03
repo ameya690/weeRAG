@@ -1,4 +1,4 @@
-# <img width="882" height="882" alt="image" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
+# <img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
  weeRAG — tiny, teachable LLM & RAG foundations
 
 **weeRAG** is a collection of small, readable implementations of building blocks behind  
