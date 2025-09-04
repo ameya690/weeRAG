@@ -1,4 +1,4 @@
-# <img width="40" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" /> weeRAG
+# <img width="200" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" /> weeRAG
 
  weeRAG — tiny, teachable LLM & RAG foundations
 
