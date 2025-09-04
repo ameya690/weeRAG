@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="200" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
+  <img width="350" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
 </p>
 
 # weeRAG — tiny, teachable LLM & RAG foundations
