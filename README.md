@@ -2,12 +2,10 @@
   <img width="350" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
 </p>
 
-# weeRAG — tiny, teachable LLM & RAG foundations
- 
 **weeRAG** is a collection of small, readable implementations of building blocks behind  
 **LLMs (Large Language Models)** and **RAG (Retrieval-Augmented Generation)** pipelines.  
 
-The design goal: *clarity over performance*. Each component is implemented in a single file, with minimal dependencies, so you can read, learn, and hack.
+The intent is clarity: Each component is implemented in a single file, with minimal dependencies.
 
 ---
 
@@ -26,13 +24,11 @@ The design goal: *clarity over performance*. Each component is implemented in a 
 
 ## Overview
 
-Why break things into categories?
-
-- **Foundations** → the *core primitives* that any LLM or RAG pipeline builds on: tokenization, transformers, attention, lexical retrieval, chunking.  
-- **RAG Toolkit** → higher-level components specifically for retrieval pipelines: vector stores, retrievers, context packing, rerankers.  
-- **Evaluation & Ops** → how you measure, monitor, and operate RAG systems: metrics, judges, caches, tracing.  
-- **Performance & Scaling** → the tricks that make systems practical: quantization, KV caches, routers, streaming.  
-- **Extras** → goodies that extend RAG beyond basics: knowledge graphs, synthetic eval data, guardrails.
+- **Foundations** → the *core primitives*: tokenization, transformers, attention, lexical retrieval, chunking.  
+- **RAG Toolkit** → vector stores, retrievers, context packing, rerankers.  
+- **Evaluation & Ops** → metrics, judges, caches, tracing.  
+- **Performance & Scaling** → quantization, KV caches, routers, streaming.  
+- **Extras** → knowledge graphs, synthetic eval data, guardrails.
 
 ---
 
@@ -168,7 +164,7 @@ pipeline (0.032s)
   pack (0.001s)
 ```
 ## Performance & Scaling
-Toy versions of tricks production LLMs use for speed & efficiency.
+Toy versions of tricks used in production LLMs for speed & efficiency.
 
 ### Quantization (wee.quant)
 Post-training int8/int4 quantization of linear layers.
