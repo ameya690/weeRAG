@@ -3,7 +3,7 @@
 </p>
 
 **weeRAG** is a collection of small, readable implementations of building blocks behind  
-**LLMs (Large Language Models)** and **RAG (Retrieval-Augmented Generation)** pipelines.  
+**LLMs** and **RAG** pipelines.  
 
 The intent is clarity: Each component is implemented in a single file, with minimal dependencies.
 
