@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wee"
 version = "0.1.0"
-description = "wee: tiny, teachable LLM/RAG foundations"
+description = "wee: LLM/RAG internals from scratch"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
