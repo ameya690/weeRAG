@@ -216,3 +216,5 @@ Report: {'pii': ['email','phone'],
 Sanitized:
  Contact me at [email] or [phone].
 ```
+## Contributing  
+Pull requests are welcome!  
