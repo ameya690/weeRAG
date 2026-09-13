@@ -20,9 +20,10 @@ pip install -e .
 ```
 
 ```bash
+pip install -e ".[torch]"       # transformer, attention, quantization modules
 pip install -e ".[retrieval]"   # cross-encoder reranking, embeddings
-pip install -e ".[demo]"        # Gradio demo app
-pip install -e ".[dev]"         # ruff, pytest
+pip install -e ".[demo]"        # Gradio + Streamlit demo apps
+pip install -e ".[dev]"         # ruff, pytest, torch
 ```
 
 ---
