@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wee"
-version = "0.2.0-dev"
+version = "0.2.0"
 description = "wee: LLM/RAG internals from scratch"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 retrieval = ["transformers", "sentence-transformers"]
+bench = ["datasets", "sentence-transformers", "anthropic"]
 demo = ["gradio"]
 dev = ["ruff", "pytest"]
 
