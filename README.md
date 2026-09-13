@@ -134,7 +134,7 @@ packed = pack_context([texts[id] for id, _, _ in reranked], max_tokens=100)
 
 ## Interactive Demo
 
-[**Try it live on Streamlit Cloud**](https://weerag.streamlit.app)
+[**Try it live on Streamlit Cloud**](https://wee-rag.streamlit.app)
 
 Compare dense, hybrid, and reranked retrieval side by side with latency and pipeline traces.
 
