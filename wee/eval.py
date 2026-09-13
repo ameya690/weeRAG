@@ -85,11 +85,72 @@ def context_precision_recall(
     return (prec, rec)
 
 
+def groundedness_score(
+    answer: str, contexts: Sequence[str], thr: float = 0.3
+) -> Dict[str, Any]:
+    """Check which answer sentences are grounded in the retrieved contexts.
+
+    Like :func:`faithfulness` but returns per-sentence detail so users can
+    debug which claims lack supporting evidence.
+    """
+    sents = sentence_split(answer)
+    if not sents:
+        return {
+            "score": 1.0,
+            "grounded_sentences": 0,
+            "total_sentences": 0,
+            "ungrounded": [],
+        }
+    grounded = 0
+    ungrounded: List[str] = []
+    for s in sents:
+        if any(jaccard(s, c) >= thr for c in contexts):
+            grounded += 1
+        else:
+            ungrounded.append(s)
+    return {
+        "score": grounded / len(sents),
+        "grounded_sentences": grounded,
+        "total_sentences": len(sents),
+        "ungrounded": ungrounded,
+    }
+
+
+def citation_support(
+    answer: str,
+    citations: Sequence[str],
+    contexts: Sequence[str],
+    thr: float = 0.5,
+) -> Dict[str, Any]:
+    """Check whether each cited passage actually appears in the retrieved context.
+
+    *citations* are the passage strings the model claims to be citing.
+    A citation is "supported" when it has ``jaccard >= thr`` with at least one
+    context passage.
+    """
+    if not citations:
+        return {"score": 1.0, "supported": 0, "total": 0, "unsupported": []}
+    supported = 0
+    unsupported: List[str] = []
+    for cite in citations:
+        if any(jaccard(cite, c) >= thr for c in contexts):
+            supported += 1
+        else:
+            unsupported.append(cite)
+    return {
+        "score": supported / len(citations),
+        "supported": supported,
+        "total": len(citations),
+        "unsupported": unsupported,
+    }
+
+
 def evaluate_qa(samples: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     out: Dict[str, Any] = {"samples": []}
     em_total = 0
     f1_total = 0.0
     faith_total = 0.0
+    ground_total = 0.0
     cp_total = 0.0
     cr_total = 0.0
     n_context = 0
@@ -103,8 +164,14 @@ def evaluate_qa(samples: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         em = exact_match(pred, golds)
         f1 = max_f1(pred, golds)
         faith = faithfulness(pred, ctx)
+        ground = groundedness_score(pred, ctx)
 
-        rec: Dict[str, Any] = {"em": em, "f1": f1, "faithfulness": faith}
+        rec: Dict[str, Any] = {
+            "em": em,
+            "f1": f1,
+            "faithfulness": faith,
+            "groundedness": ground["score"],
+        }
 
         if gold_citations is not None:
             prec, recall = context_precision_recall(ctx, gold_citations)
@@ -118,12 +185,14 @@ def evaluate_qa(samples: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         em_total += em
         f1_total += f1
         faith_total += faith
+        ground_total += ground["score"]
 
     n = max(len(samples), 1)
     out["metrics"] = {
         "em": em_total / n,
         "f1": f1_total / n,
         "faithfulness": faith_total / n,
+        "groundedness": ground_total / n,
     }
     if n_context > 0:
         out["metrics"]["context_precision"] = cp_total / n_context

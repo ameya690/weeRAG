@@ -39,15 +39,19 @@ __all__ = [
     "Reranker",
 ]
 
-from .eval import evaluate_qa, exact_match, max_f1, faithfulness, context_precision_recall
+from .eval import (
+    evaluate_qa, exact_match, max_f1, faithfulness, context_precision_recall,
+    groundedness_score, citation_support,
+)
 from .judge import Judge, HeuristicJudge
-from .cache import Cache, cached
+from .cache import Cache, cached, SemanticCache
 from .trace import Tracer
 
 __all__ += [
     "evaluate_qa", "exact_match", "max_f1", "faithfulness", "context_precision_recall",
+    "groundedness_score", "citation_support",
     "Judge", "HeuristicJudge",
-    "Cache", "cached",
+    "Cache", "cached", "SemanticCache",
     "Tracer",
 ]
 
