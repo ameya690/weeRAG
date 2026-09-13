@@ -35,12 +35,18 @@ The intent is clarity: Each component is implemented in a single file, with mini
 ## Installation
 
 ```bash
-git clone <your-fork-or-repo> weeRAG
+git clone https://github.com/ameya690/weeRAG.git
 cd weeRAG
 pip install -e .
 ```
 
-FastAPI + Uvicorn for streaming demos
+With optional extras:
+
+```bash
+pip install -e ".[retrieval]"   # cross-encoder reranking, embeddings
+pip install -e ".[demo]"        # Gradio demo app
+pip install -e ".[dev]"         # ruff, pytest
+```
 
 ---
 ## 1. Foundations
