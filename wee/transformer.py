@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
-from typing import Optional, List, Tuple
-import math
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from .attention import GroupedQueryAttention
 
 
@@ -32,7 +32,7 @@ def apply_rope(x: torch.Tensor, freqs: torch.Tensor) -> torch.Tensor:
 
 
 class SwiGLU(nn.Module):
-    def __init__(self, d_model: int, d_ff: Optional[int] = None):
+    def __init__(self, d_model: int, d_ff: int | None = None):
         super().__init__()
         if d_ff is None:
             d_ff = int(2 / 3 * 4 * d_model)
@@ -50,9 +50,9 @@ class GPTConfig:
     vocab_size: int
     d_model: int = 256
     n_heads: int = 4
-    n_kv_heads: Optional[int] = None
+    n_kv_heads: int | None = None
     n_layers: int = 4
-    d_ff: Optional[int] = None
+    d_ff: int | None = None
     max_seq_len: int = 256
     dropout: float = 0.1
     rope_theta: float = 10000.0
@@ -73,8 +73,8 @@ class GPTBlock(nn.Module):
         x: torch.Tensor,
         freqs: torch.Tensor,
         start_pos: int = 0,
-        kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        kv_cache: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         h, new_cache = self.attn(
             self.norm1(x), freqs, start_pos=start_pos, kv_cache=kv_cache, apply_rope_fn=apply_rope,
         )
@@ -111,10 +111,10 @@ class GPT(nn.Module):
     def forward(
         self,
         idx: torch.Tensor,
-        targets: Optional[torch.Tensor] = None,
+        targets: torch.Tensor | None = None,
         start_pos: int = 0,
-        kv_caches: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], List[Tuple[torch.Tensor, torch.Tensor]]]:
+        kv_caches: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, list[tuple[torch.Tensor, torch.Tensor]]]:
         B, T = idx.shape
         x = self.drop(self.tok_emb(idx))
 
@@ -140,7 +140,7 @@ class GPT(nn.Module):
         idx: torch.Tensor,
         max_new_tokens: int = 50,
         temperature: float = 1.0,
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
     ) -> torch.Tensor:
         B, T = idx.shape
         logits, _, kv_caches = self.forward(idx, start_pos=0)

@@ -1,14 +1,13 @@
-\
 import json
 import re
-from collections import Counter, defaultdict
-from typing import List, Tuple, Dict, Iterable, Optional
+from collections import Counter
+from collections.abc import Iterable
 
 BOUNDARY = "▁"  # word boundary marker (SentencePiece style)
 
 SPECIAL_TOKENS = ["<pad>", "<unk>", "<bos>", "<eos>"]
 
-def _preprocess(text: str) -> List[List[str]]:
+def _preprocess(text: str) -> list[list[str]]:
     """
     Convert text into a list of words, each represented as a list of characters
     with a leading BOUNDARY symbol to mark a space.
@@ -19,7 +18,7 @@ def _preprocess(text: str) -> List[List[str]]:
         words.append([BOUNDARY] + list(w))
     return words
 
-def _get_stats(words: List[List[str]], counts: Counter) -> Counter:
+def _get_stats(words: list[list[str]], counts: Counter) -> Counter:
     """
     Count frequency of adjacent symbol pairs across the corpus.
     Each word contributes its corpus frequency (counts key).
@@ -30,7 +29,7 @@ def _get_stats(words: List[List[str]], counts: Counter) -> Counter:
             pairs[(word[i], word[i+1])] += c
     return pairs
 
-def _merge_pair(pair: Tuple[str, str], words: List[List[str]]) -> List[List[str]]:
+def _merge_pair(pair: tuple[str, str], words: list[list[str]]) -> list[list[str]]:
     """
     Merge all occurrences of `pair` in the words (greedy, left-to-right).
     """
@@ -61,9 +60,9 @@ class Tokenizer:
       * Robust to arbitrary Unicode (operates on Python characters).
     """
     def __init__(self):
-        self.merges: List[Tuple[str, str]] = []
-        self.token2id: Dict[str, int] = {}
-        self.id2token: Dict[int, str] = {}
+        self.merges: list[tuple[str, str]] = []
+        self.token2id: dict[str, int] = {}
+        self.id2token: dict[int, str] = {}
         self.vocab_size: int = 0
 
     def train(self, corpus: Iterable[str], vocab_size: int = 2000, min_pair_freq: int = 2):
@@ -77,7 +76,7 @@ class Tokenizer:
                 counter[tuple(w)] += 1
         # unique word forms
         unique_words = [list(w) for w in counter.keys()]
-        counts = Counter(counter.values())  # aligned by iteration order below
+        Counter(counter.values())  # aligned by iteration order below
 
         # initial symbols are all characters that appear
         symbols = Counter()
@@ -86,7 +85,7 @@ class Tokenizer:
                 symbols[ch] += c
         vocab = set(symbols.keys())
 
-        merges: List[Tuple[str, str]] = []
+        merges: list[tuple[str, str]] = []
 
         # keep merging most frequent pairs
         while True:
@@ -121,7 +120,7 @@ class Tokenizer:
         self.merges = merges
         self.vocab_size = len(all_tokens)
 
-    def _apply_merges(self, symbols: List[str]) -> List[str]:
+    def _apply_merges(self, symbols: list[str]) -> list[str]:
         # Apply merges in learned order
         for a, b in self.merges:
             i = 0
@@ -136,9 +135,9 @@ class Tokenizer:
             symbols = out
         return symbols
 
-    def encode(self, text: str, add_special: bool = False) -> List[int]:
+    def encode(self, text: str, add_special: bool = False) -> list[int]:
         words = _preprocess(text)  # list of [▁, c1, c2, ...]
-        tokens: List[str] = []
+        tokens: list[str] = []
         for w in words:
             sym = self._apply_merges(w[:])
             tokens.extend(sym)
@@ -151,7 +150,7 @@ class Tokenizer:
             ids.append(self.token2id.get("<eos>", 3))
         return ids
 
-    def decode(self, ids: List[int]) -> str:
+    def decode(self, ids: list[int]) -> str:
         toks = [self.id2token.get(i, "<unk>") for i in ids]
         # strip special tokens
         toks = [t for t in toks if t not in SPECIAL_TOKENS]
@@ -172,7 +171,7 @@ class Tokenizer:
 
     @classmethod
     def load(cls, path: str) -> "Tokenizer":
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         tok = cls()
         tok.merges = [tuple(x) for x in data["merges"]]

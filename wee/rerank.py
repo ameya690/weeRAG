@@ -1,7 +1,11 @@
 from __future__ import annotations
-from typing import List, Tuple, Dict, Optional, Iterable
+
+from collections.abc import Iterable
+
 import numpy as np
+
 from .bm25 import BM25
+
 
 class Reranker:
     """
@@ -40,10 +44,10 @@ class Reranker:
     def rerank(
         self,
         query: str,
-        candidates: List[Tuple[str, float, Dict]],  # (id, score, meta) where meta may include 'text'
-        texts_by_id: Dict[str, str],
+        candidates: list[tuple[str, float, dict]],  # (id, score, meta) where meta may include 'text'
+        texts_by_id: dict[str, str],
         k: int = 5,
-    ) -> List[Tuple[str, float, Dict]]:
+    ) -> list[tuple[str, float, dict]]:
         ids = [cid for cid, _, _ in candidates]
         n = len(ids)
         if n == 0:

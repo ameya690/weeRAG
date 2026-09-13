@@ -1,15 +1,14 @@
-from typing import List, Dict, Any, Optional
-import time
-import json
 import contextlib
 import os
 import threading
+import time
+from typing import Any
 
 
 class Span:
     __slots__ = ("name", "start", "end", "attrs", "children")
 
-    def __init__(self, name: str, attrs: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, attrs: dict[str, Any] | None = None):
         self.name = name
         self.start = time.time()
         self.end = None
@@ -29,7 +28,7 @@ class Tracer:
     # Mapping from friendly wee attr names to OpenTelemetry GenAI semantic
     # convention attribute names.  Attributes whose keys appear here are
     # translated; all others are passed through with a ``wee.`` prefix.
-    ATTR_MAP: Dict[str, str] = {
+    ATTR_MAP: dict[str, str] = {
         "model": "gen_ai.request.model",
         "input_tokens": "gen_ai.usage.input_tokens",
         "output_tokens": "gen_ai.usage.output_tokens",
@@ -61,8 +60,8 @@ class Tracer:
             s.close()
             st.pop()
 
-    def export_json(self) -> Dict[str, Any]:
-        def to_dict(sp: Span) -> Dict[str, Any]:
+    def export_json(self) -> dict[str, Any]:
+        def to_dict(sp: Span) -> dict[str, Any]:
             return {
                 "name": sp.name,
                 "start": sp.start,
@@ -112,13 +111,13 @@ class Tracer:
     # OpenTelemetry GenAI semantic-convention export
     # ------------------------------------------------------------------
 
-    def _map_attrs(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def _map_attrs(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """Translate friendly attr names to OTel GenAI convention names.
 
         Keys present in ``ATTR_MAP`` are renamed; all others are kept but
         prefixed with ``wee.`` so they live in a custom namespace.
         """
-        mapped: Dict[str, Any] = {}
+        mapped: dict[str, Any] = {}
         for key, value in attrs.items():
             otel_key = self.ATTR_MAP.get(key)
             if otel_key is not None:
@@ -127,7 +126,7 @@ class Tracer:
                 mapped[f"wee.{key}"] = value
         return mapped
 
-    def export_otlp(self) -> List[Dict]:
+    def export_otlp(self) -> list[dict]:
         """Return spans formatted per OTel GenAI semantic conventions.
 
         The output is a list of span dicts (one per root span) with
@@ -136,7 +135,7 @@ class Tracer:
         JSON then forwarded to any OTLP-compatible collector.
         """
 
-        def _to_otlp(sp: Span) -> Dict[str, Any]:
+        def _to_otlp(sp: Span) -> dict[str, Any]:
             return {
                 "name": sp.name,
                 "start_time_unix_nano": int(sp.start * 1e9),
@@ -151,7 +150,7 @@ class Tracer:
     # W3C Trace Context helper (educational)
     # ------------------------------------------------------------------
 
-    def to_trace_context(self) -> Dict[str, str]:
+    def to_trace_context(self) -> dict[str, str]:
         """Return a W3C ``traceparent`` header value.
 
         Generates random 16-byte *trace-id* and 8-byte *span-id* encoded

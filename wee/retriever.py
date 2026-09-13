@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import List, Dict, Optional, Tuple, Iterable
+
 import numpy as np
+
 from .bm25 import BM25
 from .vectorstore import VectorStore
 
-def _mmr(q: np.ndarray, candidates: np.ndarray, k: int, lambda_: float = 0.5) -> List[int]:
+
+def _mmr(q: np.ndarray, candidates: np.ndarray, k: int, lambda_: float = 0.5) -> list[int]:
     selected = []
     remaining = list(range(candidates.shape[0]))
     q = q.reshape(1, -1)
@@ -21,7 +23,7 @@ def _mmr(q: np.ndarray, candidates: np.ndarray, k: int, lambda_: float = 0.5) ->
         remaining.remove(best_idx)
     return selected
 
-def _rrf(ranks: List[List[int]], k: int, K: int = 60) -> List[int]:
+def _rrf(ranks: list[list[int]], k: int, K: int = 60) -> list[int]:
     N = max((max(r) if r else -1) for r in ranks) + 1 if ranks else 0
     scores = np.zeros(N, dtype=float)
     for r in ranks:
@@ -35,8 +37,8 @@ class Retriever:
         self.method = method
         self.k = k
         self.mmr_lambda = mmr_lambda
-        self.vs: Optional[VectorStore] = None
-        self.bm25: Optional[BM25] = None
+        self.vs: VectorStore | None = None
+        self.bm25: BM25 | None = None
         self.embed_fn = None
 
     def attach_vectorstore(self, vs: VectorStore, embed_fn):
@@ -48,7 +50,7 @@ class Retriever:
         self.bm25 = bm
         return self
 
-    def _id_to_index(self) -> Dict[str, int]:
+    def _id_to_index(self) -> dict[str, int]:
         return self.vs._id_index
 
     def search(self, query: str):
