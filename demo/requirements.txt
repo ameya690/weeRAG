@@ -1,4 +1,4 @@
-gradio>=4.0
+streamlit
 numpy
 torch>=2.0.0
 wee @ git+https://github.com/ameya690/weeRAG.git@v0.2.0

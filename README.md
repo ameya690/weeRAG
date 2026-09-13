@@ -134,13 +134,14 @@ packed = pack_context([texts[id] for id, _, _ in reranked], max_tokens=100)
 
 ## Interactive Demo
 
-[**Try it live on HuggingFace Spaces**](https://huggingface.co/spaces/ameya690/weeRAG)
+[**Try it live on Streamlit Cloud**](https://weerag.streamlit.app)
 
 Compare dense, hybrid, and reranked retrieval side by side with latency and pipeline traces.
 
 ```bash
 pip install -e ".[demo]"
-python demo/app.py
+python demo/app.py              # Gradio (local)
+streamlit run demo/streamlit_app.py  # Streamlit (local)
 ```
 
 No model downloads or API keys needed — uses a built-in corpus with hash-based embeddings.

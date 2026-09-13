@@ -16,7 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 retrieval = ["transformers", "sentence-transformers"]
 bench = ["datasets", "sentence-transformers", "anthropic"]
-demo = ["gradio"]
+demo = ["gradio", "streamlit"]
 dev = ["ruff", "pytest"]
 
 [tool.setuptools.packages.find]
