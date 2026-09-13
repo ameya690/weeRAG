@@ -1,11 +1,13 @@
 """Parent-document retriever: retrieve on child chunks, return parent documents."""
 
 from __future__ import annotations
-from typing import List, Dict, Optional, Callable
+
+from collections.abc import Callable
+
 import numpy as np
 
-from .vectorstore import VectorStore
 from .chunk import chunk_with_parents
+from .vectorstore import VectorStore
 
 
 class ParentRetriever:
@@ -21,7 +23,7 @@ class ParentRetriever:
         self,
         vectorstore: VectorStore,
         embed_fn: Callable[[str], np.ndarray],
-        parent_map: Dict[str, str],
+        parent_map: dict[str, str],
     ):
         """
         Parameters
@@ -40,11 +42,11 @@ class ParentRetriever:
     @classmethod
     def from_documents(
         cls,
-        documents: List[str],
+        documents: list[str],
         embed_fn: Callable[[str], np.ndarray],
-        parent_chunk_fn: Optional[Callable[[str], List[str]]] = None,
-        child_chunk_fn: Optional[Callable[[str], List[str]]] = None,
-    ) -> "ParentRetriever":
+        parent_chunk_fn: Callable[[str], list[str]] | None = None,
+        child_chunk_fn: Callable[[str], list[str]] | None = None,
+    ) -> ParentRetriever:
         """Build a :class:`ParentRetriever` from raw document strings.
 
         Parameters
@@ -57,11 +59,11 @@ class ParentRetriever:
             Forwarded to :func:`chunk_with_parents`.
         """
         vs = VectorStore()
-        parent_map: Dict[str, str] = {}
+        parent_map: dict[str, str] = {}
 
-        child_texts: List[str] = []
-        child_ids: List[str] = []
-        child_metadata: List[Dict] = []
+        child_texts: list[str] = []
+        child_ids: list[str] = []
+        child_metadata: list[dict] = []
 
         for doc_idx, doc in enumerate(documents):
             hierarchy = chunk_with_parents(
@@ -90,7 +92,7 @@ class ParentRetriever:
 
         return cls(vectorstore=vs, embed_fn=embed_fn, parent_map=parent_map)
 
-    def search(self, query: str, k: int = 5) -> List[Dict]:
+    def search(self, query: str, k: int = 5) -> list[dict]:
         """Search for child chunks, return deduplicated parent documents.
 
         Parameters
@@ -114,7 +116,7 @@ class ParentRetriever:
         results = self.vectorstore.search(q_vec, k=k)
 
         # Deduplicate by parent text, keeping the highest score per parent
-        seen_parents: Dict[str, Dict] = {}
+        seen_parents: dict[str, dict] = {}
         for doc_id, score, meta in results:
             parent_text = self.parent_map.get(doc_id, "")
             child_text = meta.get("child_text", "")

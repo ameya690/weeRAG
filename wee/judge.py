@@ -1,4 +1,6 @@
-from typing import List, Dict, Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 
 
@@ -6,7 +8,7 @@ class HeuristicJudge:
     def __init__(self, embed_fn: Callable[[str], np.ndarray]):
         self.embed = embed_fn
 
-    def score(self, question: str, answer: str, references: List[str]) -> float:
+    def score(self, question: str, answer: str, references: list[str]) -> float:
         if not references:
             qv = self.embed(question)
             av = self.embed(answer)
@@ -22,10 +24,10 @@ class HeuristicJudge:
 class Judge:
     def __init__(
         self,
-        llm_fn: Optional[Callable[[str], float]] = None,
-        embed_fn: Optional[Callable[[str], np.ndarray]] = None,
+        llm_fn: Callable[[str], float] | None = None,
+        embed_fn: Callable[[str], np.ndarray] | None = None,
         aggregation: str = "mean",
-        rubric: Optional[str] = None,
+        rubric: str | None = None,
     ):
         assert aggregation in ("mean", "median")
         self.llm_fn = llm_fn
@@ -36,14 +38,14 @@ class Judge:
             assert embed_fn is not None
             self.heuristic = HeuristicJudge(embed_fn)
 
-    def _agg(self, xs: List[float]) -> float:
+    def _agg(self, xs: list[float]) -> float:
         if not xs:
             return 0.0
         return float(np.mean(xs) if self.aggregation == "mean" else np.median(xs))
 
     def judge(
-        self, question: str, answer: str, references: List[str], n: int = 3
-    ) -> Dict[str, Any]:
+        self, question: str, answer: str, references: list[str], n: int = 3
+    ) -> dict[str, Any]:
         scores = []
         if self.llm_fn is not None:
             prompt = (

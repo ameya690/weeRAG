@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from typing import Any, Dict, List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 _WORD = re.compile(r"\w+")
 
@@ -11,7 +12,7 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.strip().lower())
 
 
-def _tokens(s: str) -> List[str]:
+def _tokens(s: str) -> list[str]:
     return [t.lower() for t in _WORD.findall(s)]
 
 
@@ -49,7 +50,7 @@ def jaccard(a: str, b: str) -> float:
     return len(sa & sb) / max(len(sa | sb), 1)
 
 
-def sentence_split(s: str) -> List[str]:
+def sentence_split(s: str) -> list[str]:
     return [seg.strip() for seg in re.split(r"(?<=[\.\!?])\s+", s.strip()) if seg.strip()]
 
 
@@ -63,7 +64,7 @@ def faithfulness(answer: str, contexts: Sequence[str], thr: float = 0.5) -> floa
 
 def context_precision_recall(
     selected: Sequence[str], gold: Sequence[str], thr: float = 0.5
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     if not selected and not gold:
         return (1.0, 1.0)
     if not selected:
@@ -87,7 +88,7 @@ def context_precision_recall(
 
 def groundedness_score(
     answer: str, contexts: Sequence[str], thr: float = 0.3
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check which answer sentences are grounded in the retrieved contexts.
 
     Like :func:`faithfulness` but returns per-sentence detail so users can
@@ -102,7 +103,7 @@ def groundedness_score(
             "ungrounded": [],
         }
     grounded = 0
-    ungrounded: List[str] = []
+    ungrounded: list[str] = []
     for s in sents:
         if any(jaccard(s, c) >= thr for c in contexts):
             grounded += 1
@@ -121,7 +122,7 @@ def citation_support(
     citations: Sequence[str],
     contexts: Sequence[str],
     thr: float = 0.5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check whether each cited passage actually appears in the retrieved context.
 
     *citations* are the passage strings the model claims to be citing.
@@ -131,7 +132,7 @@ def citation_support(
     if not citations:
         return {"score": 1.0, "supported": 0, "total": 0, "unsupported": []}
     supported = 0
-    unsupported: List[str] = []
+    unsupported: list[str] = []
     for cite in citations:
         if any(jaccard(cite, c) >= thr for c in contexts):
             supported += 1
@@ -145,8 +146,8 @@ def citation_support(
     }
 
 
-def evaluate_qa(samples: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
-    out: Dict[str, Any] = {"samples": []}
+def evaluate_qa(samples: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    out: dict[str, Any] = {"samples": []}
     em_total = 0
     f1_total = 0.0
     faith_total = 0.0
@@ -166,7 +167,7 @@ def evaluate_qa(samples: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         faith = faithfulness(pred, ctx)
         ground = groundedness_score(pred, ctx)
 
-        rec: Dict[str, Any] = {
+        rec: dict[str, Any] = {
             "em": em,
             "f1": f1,
             "faithfulness": faith,

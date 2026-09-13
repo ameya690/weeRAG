@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
 from .chunk import chunk_by_sentences
 
@@ -21,7 +21,7 @@ class ContextualChunker:
     def __init__(
         self,
         generate_fn: Callable[[str, str], str],
-        chunk_fn: Optional[Callable[[str], List[str]]] = None,
+        chunk_fn: Callable[[str], list[str]] | None = None,
     ) -> None:
         self.generate_fn = generate_fn
         self.chunk_fn = chunk_fn or chunk_by_sentences
@@ -30,7 +30,7 @@ class ContextualChunker:
     # Public API
     # ------------------------------------------------------------------
 
-    def contextualize(self, document: str) -> List[Dict[str, str]]:
+    def contextualize(self, document: str) -> list[dict[str, str]]:
         """Chunk *document* and generate a contextual blurb for each chunk.
 
         Returns a list of dicts, one per chunk::
@@ -42,7 +42,7 @@ class ContextualChunker:
             }
         """
         chunks = self.chunk_fn(document)
-        results: List[Dict[str, str]] = []
+        results: list[dict[str, str]] = []
         for chunk in chunks:
             blurb = self.generate_fn(document, chunk)
             results.append(
@@ -55,8 +55,8 @@ class ContextualChunker:
         return results
 
     def contextualize_batch(
-        self, documents: List[str]
-    ) -> List[List[Dict[str, str]]]:
+        self, documents: list[str]
+    ) -> list[list[dict[str, str]]]:
         """Apply :meth:`contextualize` to every document in *documents*.
 
         Returns a nested list — one inner list per document.

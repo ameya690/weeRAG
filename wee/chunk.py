@@ -1,11 +1,13 @@
 import re
-from typing import List, Dict, Tuple, Iterable, Optional, Callable
+from collections.abc import Callable
+
 import numpy as np
+
 from .tokenizer import Tokenizer
 
 _SENT_SPLIT = re.compile(r'(?<=[\.!?])\s+')
 
-def chunk_by_words(text: str, max_words: int = 200, overlap: int = 20) -> List[str]:
+def chunk_by_words(text: str, max_words: int = 200, overlap: int = 20) -> list[str]:
     """
     Simple whitespace word chunking with optional overlap (by words).
     Returns list of text chunks.
@@ -22,7 +24,7 @@ def chunk_by_words(text: str, max_words: int = 200, overlap: int = 20) -> List[s
         i += step
     return chunks
 
-def chunk_by_sentences(text: str, max_chars: int = 1000, overlap: int = 100) -> List[str]:
+def chunk_by_sentences(text: str, max_chars: int = 1000, overlap: int = 100) -> list[str]:
     """
     Sentence-aware chunking: pack sentences into chunks up to max_chars with overlap.
     """
@@ -49,7 +51,7 @@ def chunk_by_sentences(text: str, max_chars: int = 1000, overlap: int = 100) -> 
         chunks.append(cur)
     return chunks
 
-def chunk_by_tokens(text: str, tokenizer: Tokenizer, max_tokens: int = 256, overlap: int = 32) -> List[str]:
+def chunk_by_tokens(text: str, tokenizer: Tokenizer, max_tokens: int = 256, overlap: int = 32) -> list[str]:
     """
     Token-budgeted chunking using wee.Tokenizer. Chunks are decoded back to text.
     """
@@ -81,7 +83,7 @@ def chunk_by_semantic(
     embed_fn: Callable[[str], np.ndarray],
     threshold: float = 0.5,
     min_chunk_size: int = 50,
-) -> List[str]:
+) -> list[str]:
     """Semantic chunking: split where consecutive-sentence similarity drops below *threshold*.
 
     Parameters
@@ -108,14 +110,14 @@ def chunk_by_semantic(
     embeddings = [np.asarray(embed_fn(s), dtype=np.float32) for s in sentences]
 
     # Find breakpoints where similarity drops below threshold
-    breakpoints: List[int] = []
+    breakpoints: list[int] = []
     for i in range(len(sentences) - 1):
         sim = _cosine_sim(embeddings[i], embeddings[i + 1])
         if sim < threshold:
             breakpoints.append(i + 1)  # split *before* sentence i+1
 
     # Build raw chunks from breakpoints
-    raw_chunks: List[str] = []
+    raw_chunks: list[str] = []
     prev = 0
     for bp in breakpoints:
         raw_chunks.append(" ".join(sentences[prev:bp]))
@@ -123,7 +125,7 @@ def chunk_by_semantic(
     raw_chunks.append(" ".join(sentences[prev:]))
 
     # Enforce min_chunk_size by merging tiny chunks forward
-    merged: List[str] = []
+    merged: list[str] = []
     buf = ""
     for chunk in raw_chunks:
         if buf:
@@ -144,9 +146,9 @@ def chunk_by_semantic(
 
 def chunk_with_parents(
     text: str,
-    parent_chunk_fn: Optional[Callable[[str], List[str]]] = None,
-    child_chunk_fn: Optional[Callable[[str], List[str]]] = None,
-) -> List[Dict]:
+    parent_chunk_fn: Callable[[str], list[str]] | None = None,
+    child_chunk_fn: Callable[[str], list[str]] | None = None,
+) -> list[dict]:
     """Create a two-level chunk hierarchy (parent + child).
 
     Parameters
@@ -176,12 +178,14 @@ def chunk_with_parents(
     context) to the LLM.
     """
     if parent_chunk_fn is None:
-        parent_chunk_fn = lambda t: chunk_by_sentences(t, max_chars=2000)
+        def parent_chunk_fn(t):
+            return chunk_by_sentences(t, max_chars=2000)
     if child_chunk_fn is None:
-        child_chunk_fn = lambda p: chunk_by_sentences(p, max_chars=500)
+        def child_chunk_fn(p):
+            return chunk_by_sentences(p, max_chars=500)
 
     parents = parent_chunk_fn(text)
-    hierarchy: List[Dict] = []
+    hierarchy: list[dict] = []
     for pid, parent in enumerate(parents):
         children_texts = child_chunk_fn(parent)
         children = [

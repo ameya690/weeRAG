@@ -1,15 +1,18 @@
 from __future__ import annotations
-from typing import List, Optional, Dict, Sequence, Tuple
+
+from collections.abc import Sequence
+
 from .tokenizer import Tokenizer
+
 
 def _normalize(text: str) -> str:
     return " ".join(text.strip().split()).lower()
 
 def pack_context(
     chunks: Sequence[str],
-    scores: Optional[Sequence[float]] = None,
+    scores: Sequence[float] | None = None,
     max_tokens: int = 1024,
-    tokenizer: Optional[Tokenizer] = None,
+    tokenizer: Tokenizer | None = None,
     strategy: str = "priority",
     dedup: bool = True,
     sep: str = "\n---\n",
@@ -49,7 +52,7 @@ def pack_context(
         return max(1, len(s.split()))
 
     budget = max_tokens
-    out_chunks: List[str] = []
+    out_chunks: list[str] = []
     for text, _ in ordered:
         need = count_tokens(text + (sep if out_chunks else ""))
         if need <= budget:

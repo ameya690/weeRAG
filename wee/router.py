@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Optional
-import math
+
+from typing import Any
+
 
 class Router:
     """
@@ -16,10 +17,10 @@ class Router:
     }
     Policy selects endpoint by weighted objective given a request spec.
     """
-    def __init__(self, endpoints: List[Dict[str, Any]]):
+    def __init__(self, endpoints: list[dict[str, Any]]):
         self.endpoints = endpoints
 
-    def route(self, prompt_len: int, max_output_tokens: int, budget_usd: Optional[float] = None, latency_target_s: Optional[float] = None, priority: str = "balance", required_tags: Optional[List[str]] = None) -> Dict[str, Any]:
+    def route(self, prompt_len: int, max_output_tokens: int, budget_usd: float | None = None, latency_target_s: float | None = None, priority: str = "balance", required_tags: list[str] | None = None) -> dict[str, Any]:
         assert priority in ("balance", "quality", "speed", "cost")
         required_tags = required_tags or []
         # Filter by context length and tags

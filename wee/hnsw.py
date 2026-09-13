@@ -11,7 +11,6 @@ Not production-grade: no deletions, no serialisation, single-threaded.
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -32,14 +31,14 @@ class HNSWIndex:
         self.max_level = max_level
 
         # Storage
-        self.vectors: List[np.ndarray] = []
-        self.doc_ids: List[Optional[str]] = []
+        self.vectors: list[np.ndarray] = []
+        self.doc_ids: list[str | None] = []
 
         # Graph: graph[layer][node_id] -> set of neighbor node_ids
-        self.graph: List[Dict[int, set]] = [dict() for _ in range(max_level)]
+        self.graph: list[dict[int, set]] = [dict() for _ in range(max_level)]
 
         # Entry point: node with the highest insertion level
-        self.entry_point: Optional[int] = None
+        self.entry_point: int | None = None
         self.entry_level: int = -1
 
     # ------------------------------------------------------------------
@@ -75,7 +74,7 @@ class HNSWIndex:
         entry_point: int,
         ef: int,
         layer: int,
-    ) -> List[Tuple[float, int]]:
+    ) -> list[tuple[float, int]]:
         """Greedy BFS on *layer*, returning up to *ef* nearest neighbours.
 
         Returns a list of ``(similarity, node_id)`` pairs sorted descending
@@ -83,8 +82,8 @@ class HNSWIndex:
         """
         visited: set = {entry_point}
         ep_sim = self._cosine_sim(query, self.vectors[entry_point])
-        candidates: List[Tuple[float, int]] = [(-ep_sim, entry_point)]  # min-heap by neg sim
-        results: List[Tuple[float, int]] = [(ep_sim, entry_point)]
+        candidates: list[tuple[float, int]] = [(-ep_sim, entry_point)]  # min-heap by neg sim
+        results: list[tuple[float, int]] = [(ep_sim, entry_point)]
 
         import heapq
 
@@ -118,7 +117,7 @@ class HNSWIndex:
     # Insert
     # ------------------------------------------------------------------
 
-    def add(self, vector: np.ndarray, doc_id: Optional[str] = None):
+    def add(self, vector: np.ndarray, doc_id: str | None = None):
         """Insert a single vector into the index."""
         vector = np.asarray(vector, dtype=np.float32).ravel()
         assert vector.shape[0] == self.dim, f"Expected dim {self.dim}, got {vector.shape[0]}"
@@ -186,7 +185,7 @@ class HNSWIndex:
         query: np.ndarray,
         k: int = 5,
         ef: int = 50,
-    ) -> List[Tuple[Optional[str], float]]:
+    ) -> list[tuple[str | None, float]]:
         """Return the *k* approximate nearest neighbours.
 
         Returns ``(doc_id, similarity)`` pairs sorted by descending
@@ -217,7 +216,7 @@ class HNSWIndex:
         self,
         query: np.ndarray,
         k: int,
-        exact_results: List,
+        exact_results: list,
     ) -> float:
         """Compare HNSW results against brute-force exact results.
 

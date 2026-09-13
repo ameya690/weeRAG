@@ -1,11 +1,11 @@
 import math
 import re
-from collections import defaultdict, Counter
-from typing import List, Tuple, Dict, Iterable
+from collections import Counter, defaultdict
+from collections.abc import Iterable
 
 _WORD = re.compile(r"\b\w+\b", re.UNICODE)
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str) -> list[str]:
     return [t.lower() for t in _WORD.findall(text)]
 
 class BM25:
@@ -17,12 +17,12 @@ class BM25:
     def __init__(self, k1: float = 1.5, b: float = 0.75):
         self.k1 = k1
         self.b = b
-        self.doc_freq: Dict[str, int] = defaultdict(int)
-        self.doc_len: List[int] = []
+        self.doc_freq: dict[str, int] = defaultdict(int)
+        self.doc_len: list[int] = []
         self.avgdl: float = 0.0
         self.N: int = 0
-        self.inverted: Dict[str, List[Tuple[int, int]]] = defaultdict(list)  # term -> List[(doc_id, tf)]
-        self.docs: List[str] = []
+        self.inverted: dict[str, list[tuple[int, int]]] = defaultdict(list)  # term -> List[(doc_id, tf)]
+        self.docs: list[str] = []
 
     def add(self, corpus: Iterable[str]):
         for doc in corpus:
@@ -45,9 +45,9 @@ class BM25:
             return 0.0
         return math.log((self.N - n_qi + 0.5) / (n_qi + 0.5) + 1.0)
 
-    def search(self, query: str, k: int = 5) -> List[Tuple[int, float]]:
+    def search(self, query: str, k: int = 5) -> list[tuple[int, float]]:
         q_terms = _tokenize(query)
-        scores: Dict[int, float] = defaultdict(float)
+        scores: dict[int, float] = defaultdict(float)
         for term in q_terms:
             postings = self.inverted.get(term, [])
             idf = self._idf(term)
