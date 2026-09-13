@@ -4,13 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wee"
-version = "0.1.2"
+version = "0.2.0-dev"
 description = "wee: LLM/RAG internals from scratch"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "torch>=2.0.0",
+    "numpy",
 ]
+
+[project.optional-dependencies]
+retrieval = ["transformers", "sentence-transformers"]
+demo = ["gradio"]
+dev = ["ruff", "pytest"]
 
 [tool.setuptools.packages.find]
 include = ["wee*"]
