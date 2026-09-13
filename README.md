@@ -216,5 +216,9 @@ Report: {'pii': ['email','phone'],
 Sanitized:
  Contact me at [email] or [phone].
 ```
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 ## Contributing  
 Pull requests are welcome!  
