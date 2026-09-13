@@ -9,16 +9,26 @@ class Reranker:
     - mode="dense": cosine between query and chunk embeddings
     - mode="lexical": BM25 over chunk texts
     - mode="hybrid": weighted sum of dense + lexical normalized ranks
+    - mode="cross_encoder": score (query, doc) pairs with a cross-encoder fn
+    - mode="cross_encoder_hybrid": fuse cross-encoder scores with BM25 lexical ranks
     """
+    MODES = ("dense", "lexical", "hybrid", "cross_encoder", "cross_encoder_hybrid")
+
     def __init__(self, mode: str = "dense", alpha: float = 0.5):
-        assert mode in ("dense", "lexical", "hybrid")
+        assert mode in self.MODES, f"mode must be one of {self.MODES}"
         self.mode = mode
         self.alpha = alpha
-        self.embed_fn = None  # for dense
-        self.bm25 = None      # for lexical (not required; we reindex candidates)
+        self.embed_fn = None          # for dense
+        self.bm25 = None              # for lexical (not required; we reindex candidates)
+        self.cross_encoder_fn = None  # for cross_encoder
 
     def attach_dense(self, embed_fn):
         self.embed_fn = embed_fn
+        return self
+
+    def attach_cross_encoder(self, cross_encoder_fn):
+        """Attach a cross-encoder scoring function: (query: str, doc: str) -> float."""
+        self.cross_encoder_fn = cross_encoder_fn
         return self
 
     def attach_lexical(self, corpus_texts: Iterable[str]):
@@ -86,6 +96,41 @@ class Reranker:
                 r_dense = dense_rank_pos[i] / denom
                 r_lex = lex_rank_pos.get(i, n - 1) / denom  # default to worst
                 score = -(self.alpha * r_dense + (1 - self.alpha) * r_lex)
+                fused.append((i, score))
+
+            order = [i for i, _ in sorted(fused, key=lambda x: -x[1])][:k]
+            return [candidates[i] for i in order]
+
+        if self.mode == "cross_encoder":
+            assert self.cross_encoder_fn is not None
+            scores = np.array([
+                self.cross_encoder_fn(query, texts_by_id[cid]) for cid in ids
+            ])
+            order = np.argsort(-scores)[:k]
+            return [(ids[i], float(scores[i]), candidates[i][2]) for i in order]
+
+        if self.mode == "cross_encoder_hybrid":
+            assert self.cross_encoder_fn is not None
+            # Cross-encoder ranks
+            ce_scores = np.array([
+                self.cross_encoder_fn(query, texts_by_id[cid]) for cid in ids
+            ])
+            ce_rank = np.argsort(-ce_scores)
+            ce_rank_pos = {i: r for r, i in enumerate(ce_rank)}
+
+            # Lexical ranks over candidates
+            bm = BM25()
+            bm.add([texts_by_id[i] for i in ids])
+            lex_hits = bm.search(query, k=n)
+            lex_rank_pos = {doc_id: r for r, (doc_id, _) in enumerate(lex_hits)}
+
+            # Fuse normalized ranks: alpha * cross-encoder + (1-alpha) * lexical
+            denom = max(n - 1, 1)
+            fused = []
+            for i in range(n):
+                r_ce = ce_rank_pos[i] / denom
+                r_lex = lex_rank_pos.get(i, n - 1) / denom
+                score = -(self.alpha * r_ce + (1 - self.alpha) * r_lex)
                 fused.append((i, score))
 
             order = [i for i, _ in sorted(fused, key=lambda x: -x[1])][:k]

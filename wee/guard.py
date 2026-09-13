@@ -21,9 +21,28 @@ INJECTION_PATTERNS = [
 ]
 
 class Guard:
+    """Lightweight guardrail checks: PII, profanity, injection, link allowlist.
+
+    Limitations: injection detection uses regex heuristics, not ML classifiers.
+    This catches common patterns but has known blind spots:
+    - Obfuscated prompts (Unicode homoglyphs, base64, leetspeak)
+    - Novel injection techniques not covered by the pattern list
+    - High false-positive rate on benign text that happens to match patterns
+
+    Treat this as a baseline filter, not a security boundary. For production
+    use, layer this with ML-based classifiers and human review.
     """
-    Lightweight guardrail checks: PII, profanity, injection-y phrases, link allowlist.
-    """
+
+    KNOWN_LIMITS: List[str] = [
+        "Obfuscated prompts (Unicode homoglyphs, base64, leetspeak)",
+        "Novel injection techniques not covered by the pattern list",
+        "High false-positive rate on benign text that happens to match patterns",
+        "No detection of semantic prompt injection (e.g. encoded instructions in data)",
+        "Profanity list is minimal and English-only",
+        "PII patterns are US-centric (phone, credit card formats)",
+        "Credit card regex may match arbitrary long digit sequences",
+    ]
+
     def __init__(self, allowed_domains: List[str] = None):
         self.allowed = set(allowed_domains or [])
         self.injection_rx = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]

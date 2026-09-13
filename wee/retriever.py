@@ -48,6 +48,9 @@ class Retriever:
         self.bm25 = bm
         return self
 
+    def _id_to_index(self) -> Dict[str, int]:
+        return self.vs._id_index
+
     def search(self, query: str):
         assert self.vs is not None or self.bm25 is not None, "Attach at least one backend"
         if self.method == "topk":
@@ -57,9 +60,10 @@ class Retriever:
         if self.method == "mmr":
             assert self.vs is not None and self.embed_fn is not None
             q = self.embed_fn(query)
+            id_idx = self._id_to_index()
             pool = min(max(10, self.k * 5), len(self.vs.ids))
             cand = self.vs.search(q, k=pool)
-            idxs = [self.vs.ids.index(doc_id) for doc_id, _, _ in cand]
+            idxs = [id_idx[doc_id] for doc_id, _, _ in cand]
             cand_vecs = self.vs.vectors[idxs]
             selected_local = _mmr(q, cand_vecs, k=self.k, lambda_=self.mmr_lambda)
             selected = [idxs[i] for i in selected_local]
@@ -68,8 +72,9 @@ class Retriever:
         if self.method == "rrf":
             assert self.vs is not None and self.embed_fn is not None and self.bm25 is not None
             q = self.embed_fn(query)
+            id_idx = self._id_to_index()
             dense_top = self.vs.search(q, k=min(max(10, self.k * 5), len(self.vs.ids)))
-            dense_indices = [self.vs.ids.index(doc_id) for doc_id, _, _ in dense_top]
+            dense_indices = [id_idx[doc_id] for doc_id, _, _ in dense_top]
             bm_hits = self.bm25.search(query, k=min(max(10, self.k * 5), self.bm25.N))
             bm_indices = [doc_id for doc_id, _ in bm_hits]
             fused_indices = _rrf([dense_indices, bm_indices], k=self.k)
