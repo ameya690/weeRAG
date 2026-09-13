@@ -87,6 +87,7 @@ class VectorStore:
         k: int = 5,
         filter_fn: Optional[Callable[[Dict], bool]] = None,
     ):
+        self._flush()
         assert self.vectors is not None and len(self.ids) > 0, "Empty index"
         scores = self._cosine_scores(query_vector)
 
