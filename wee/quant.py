@@ -146,7 +146,7 @@ def eval_perplexity(model: nn.Module, data_ids: torch.Tensor, vocab_size: int, c
             T = min(chunk_len, (N - 1) - i)  # ensure we have T pairs
             x = data_ids[i : i + T].unsqueeze(0)           # (1, T)
             y = data_ids[i + 1 : i + 1 + T].unsqueeze(0)   # (1, T)
-            logits, loss = model(x, y)
+            logits, loss, *_ = model(x, y)
             losses.append(loss.item())
 
     mean_loss = sum(losses) / max(len(losses), 1)
