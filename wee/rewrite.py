@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import List, Callable, Tuple, Any
-import re
 
+import re
+from collections.abc import Callable
+from typing import Any
 
 _REWRITE_PROMPT = (
     "Rewrite the following user query to be more specific and search-friendly. "
@@ -34,7 +35,7 @@ def rewrite_query(query: str, rewrite_fn: Callable[[str], str]) -> str:
     return rewrite_fn(prompt).strip()
 
 
-def decompose_query(query: str, decompose_fn: Callable[[str], str]) -> List[str]:
+def decompose_query(query: str, decompose_fn: Callable[[str], str]) -> list[str]:
     """Break *query* into 2-4 simpler sub-questions via an LLM callable."""
     prompt = _DECOMPOSE_PROMPT.format(query=query)
     raw = decompose_fn(prompt)
@@ -64,7 +65,7 @@ class QueryExpander:
         self.decompose_fn = decompose_fn
 
     # ------------------------------------------------------------------
-    def expand(self, query: str, mode: str = "rewrite") -> List[str]:
+    def expand(self, query: str, mode: str = "rewrite") -> list[str]:
         """Return a list of query variants according to *mode*."""
         assert mode in self.MODES, f"mode must be one of {self.MODES}"
 
@@ -84,7 +85,7 @@ class QueryExpander:
 
         if mode == "multi_rewrite":
             assert self.rewrite_fn is not None, "rewrite_fn required for mode='multi_rewrite'"
-            variants: List[str] = []
+            variants: list[str] = []
             for style_prompt in _MULTI_REWRITE_STYLES:
                 result = self.rewrite_fn(style_prompt.format(query=query)).strip()
                 if result:
@@ -97,17 +98,17 @@ class QueryExpander:
     def search_with_expansion(
         self,
         query: str,
-        search_fn: Callable[[str], List[Tuple[Any, ...]]],
+        search_fn: Callable[[str], list[tuple[Any, ...]]],
         mode: str = "rewrite",
         deduplicate: bool = True,
-    ) -> List[Tuple[Any, ...]]:
+    ) -> list[tuple[Any, ...]]:
         """Expand *query*, search each variant, merge results.
 
         *search_fn* should accept a query string and return a list of tuples
         whose first element is a document ID (used for deduplication).
         """
         variants = self.expand(query, mode=mode)
-        all_results: List[Tuple[Any, ...]] = []
+        all_results: list[tuple[Any, ...]] = []
         seen_ids: set = set()
 
         for variant in variants:

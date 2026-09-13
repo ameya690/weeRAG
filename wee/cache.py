@@ -1,9 +1,10 @@
-from typing import Optional, Any, Callable, Dict, List, Tuple
-import time
+import hashlib
 import json
 import sqlite3
-import hashlib
 import threading
+import time
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
@@ -28,7 +29,7 @@ class Cache:
         )
         self._con.commit()
 
-    def set(self, key_signature: str, value: Any, ttl_seconds: Optional[float] = None):
+    def set(self, key_signature: str, value: Any, ttl_seconds: float | None = None):
         k = _sha256(key_signature)
         v = json.dumps(value, ensure_ascii=False)
         created = _now()
@@ -102,11 +103,11 @@ class SemanticCache:
         self._max_entries = max_entries
         self._lock = threading.Lock()
         # Each entry: (embedding, query_text, value, timestamp)
-        self._entries: List[Tuple[np.ndarray, str, Any, float]] = []
+        self._entries: list[tuple[np.ndarray, str, Any, float]] = []
         self._hits = 0
         self._misses = 0
 
-    def get(self, query: str) -> Optional[Any]:
+    def get(self, query: str) -> Any | None:
         """Return cached value if a semantically similar query exists, else None."""
         query_emb = self._embed_fn(query)
         with self._lock:
@@ -146,7 +147,7 @@ class SemanticCache:
             self._hits = 0
             self._misses = 0
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return cache statistics."""
         with self._lock:
             total = self._hits + self._misses

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,9 +8,9 @@ def scaled_dot_product_attention(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
-    mask: Optional[torch.Tensor] = None,
+    mask: torch.Tensor | None = None,
     dropout_p: float = 0.0,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Hand-rolled SDPA for teaching purposes.
     q, k, v: (B, H, T, Dh)
@@ -49,7 +49,7 @@ class GroupedQueryAttention(nn.Module):
         self,
         d_model: int,
         n_heads: int,
-        n_kv_heads: Optional[int] = None,
+        n_kv_heads: int | None = None,
         dropout: float = 0.0,
     ):
         super().__init__()
@@ -72,9 +72,9 @@ class GroupedQueryAttention(nn.Module):
         x: torch.Tensor,
         freqs: torch.Tensor,
         start_pos: int = 0,
-        kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        kv_cache: tuple[torch.Tensor, torch.Tensor] | None = None,
         apply_rope_fn=None,
-    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         B, T, _ = x.shape
 
         q = self.wq(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)

@@ -1,18 +1,18 @@
 # wee/synth.py
 from __future__ import annotations
-from typing import List, Dict, Optional
-import re
+
 import random
+import re
 
 _SENT_SPLIT = re.compile(r'(?<=[.!?])\s+')
 
-def _sents(text: str) -> List[str]:
+def _sents(text: str) -> list[str]:
     return [s.strip() for s in _SENT_SPLIT.split(text.strip()) if s.strip()]
 
 def _titlecase(s: str) -> str:
     return s[:1].upper() + s[1:] if s else s
 
-def _cloze(sent: str) -> Optional[Dict]:
+def _cloze(sent: str) -> dict | None:
     words = [w for w in re.findall(r"[A-Za-z0-9'-]+", sent) if len(w) > 3]
     if not words:
         return None
@@ -20,7 +20,7 @@ def _cloze(sent: str) -> Optional[Dict]:
     q = sent.replace(ans, "____", 1)
     return {"question": q, "answers": [ans], "type": "cloze"}
 
-def _wh(sent: str) -> Optional[Dict]:
+def _wh(sent: str) -> dict | None:
     # Naive WH: “X uses Y” -> What does X use?
     m = re.search(r"^([\w\s-]{2,80})\s+uses\s+([\w\s-]{2,80})", sent, re.IGNORECASE)
     if m:
@@ -32,19 +32,20 @@ def _wh(sent: str) -> Optional[Dict]:
         return {"question": f"What does {_titlecase(x)} retrieve?", "answers": [y], "type": "wh"}
     return None
 
-def synth_qa(texts: List[str], n_per_text: int = 3, seed: int = 0) -> List[Dict]:
+def synth_qa(texts: list[str], n_per_text: int = 3, seed: int = 0) -> list[dict]:
     """
     Make tiny synthetic QA pairs from raw texts.
     Returns dicts: {"question", "answers", "context"}
     """
     random.seed(seed)
-    out: List[Dict] = []
+    out: list[dict] = []
     for txt in texts:
         sents = _sents(txt)
         cand = []
         for s in sents:
             s = s.strip()
-            if not s: continue
+            if not s:
+                continue
             q = _wh(s) or _cloze(s)
             if q:
                 q["context"] = s

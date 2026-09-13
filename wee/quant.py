@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Tuple, Optional, Dict
+
 import math
+
 import torch
 import torch.nn as nn
+
 
 def _sizeof(t: torch.Tensor) -> int:
     return t.numel() * t.element_size()
@@ -37,7 +39,7 @@ class QuantLinear(nn.Module):
             self.register_parameter("bias", None)
 
     @staticmethod
-    def from_linear(lin: nn.Linear, bits: int = 8, per_channel: bool = True) -> "QuantLinear":
+    def from_linear(lin: nn.Linear, bits: int = 8, per_channel: bool = True) -> QuantLinear:
         qlin = QuantLinear(lin.in_features, lin.out_features, bias=(lin.bias is not None), bits=bits, per_channel=per_channel)
         qlin.quantize_(lin.weight.data, lin.bias.data if lin.bias is not None else None)
         return qlin
@@ -52,9 +54,10 @@ class QuantLinear(nn.Module):
         zero = torch.zeros_like(scale)
         return scale, zero
 
-    def quantize_(self, w_fp32: torch.Tensor, b_fp32: Optional[torch.Tensor] = None):
+    def quantize_(self, w_fp32: torch.Tensor, b_fp32: torch.Tensor | None = None):
         scale, zero = self._calc_scale_zero(w_fp32)
-        self.scale.copy_(scale); self.zero.copy_(zero)
+        self.scale.copy_(scale)
+        self.zero.copy_(zero)
         if self.bits == 8:
             w_q = torch.clamp((w_fp32/scale).round(), -128, 127).to(torch.int8)
             self.w_q.copy_(w_q)
@@ -112,7 +115,7 @@ def quantize_model(model: nn.Module, bits: int = 8, per_channel: bool = True) ->
             quantize_model(module, bits=bits, per_channel=per_channel)
     return model
 
-def size_report(model: nn.Module) -> Dict[str, int]:
+def size_report(model: nn.Module) -> dict[str, int]:
     """
     Report sizes in bytes of trainable parameters, non-trainable buffers, and total.
     """
@@ -133,7 +136,6 @@ def eval_perplexity(model: nn.Module, data_ids: torch.Tensor, vocab_size: int, c
     Ensures x and y have identical lengths on every step.
     """
     model.eval()
-    import torch.nn.functional as F
 
     N = data_ids.numel()
     if N < 2:

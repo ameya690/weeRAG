@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import List, Tuple, Callable, Optional
+
+from collections.abc import Callable
+
 import numpy as np
 
 
@@ -28,7 +30,7 @@ class Embedder:
         small = emb.truncate(128)                # new Embedder at 128 dims
     """
 
-    def __init__(self, embed_fn: Callable[[str], np.ndarray], dim: Optional[int] = None):
+    def __init__(self, embed_fn: Callable[[str], np.ndarray], dim: int | None = None):
         """
         Args:
             embed_fn: callable mapping a single text string to a 1-D float
@@ -54,7 +56,7 @@ class Embedder:
             vec = vec[: self.dim]
         return _l2_normalize(vec)
 
-    def embed_batch(self, texts: List[str]) -> np.ndarray:
+    def embed_batch(self, texts: list[str]) -> np.ndarray:
         """Embed multiple texts.
 
         Returns a float32 array of shape ``(N, dim)`` where every row is
@@ -205,7 +207,7 @@ def binary_search(
     query_binary: np.ndarray,
     index_binary: np.ndarray,
     k: int = 5,
-) -> List[Tuple[int, int]]:
+) -> list[tuple[int, int]]:
     """Fast approximate nearest-neighbor search using binary embeddings.
 
     Args:

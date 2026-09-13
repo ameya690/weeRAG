@@ -2,9 +2,9 @@
 and when it has enough context to answer."""
 
 from __future__ import annotations
-from typing import List, Dict, Callable, Optional
-import re
 
+import re
+from collections.abc import Callable
 
 # ---------------------------------------------------------------------------
 # Prompt template
@@ -138,7 +138,7 @@ class AgentLoop:
     def __init__(
         self,
         generate_fn: Callable[[str], str],
-        tools: List[Tool],
+        tools: list[Tool],
         max_steps: int = 5,
     ):
         self.generate_fn = generate_fn
@@ -147,7 +147,7 @@ class AgentLoop:
 
     # -- public API ----------------------------------------------------------
 
-    def run(self, question: str, system_prompt: Optional[str] = None) -> Dict:
+    def run(self, question: str, system_prompt: str | None = None) -> dict:
         """Run the agent loop on *question*.
 
         Returns
@@ -164,7 +164,7 @@ class AgentLoop:
             tool_descriptions=tool_desc
         )
 
-        steps: List[Dict] = []
+        steps: list[dict] = []
         prompt = self._build_prompt(system, question, steps)
 
         for _ in range(self.max_steps):
@@ -222,7 +222,7 @@ class AgentLoop:
     # -- internals -----------------------------------------------------------
 
     @staticmethod
-    def _build_prompt(system: str, question: str, steps: List[Dict]) -> str:
+    def _build_prompt(system: str, question: str, steps: list[dict]) -> str:
         parts = [system, f"\nQuestion: {question}\n"]
         for s in steps:
             parts.append(

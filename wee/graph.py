@@ -1,20 +1,21 @@
 # wee/graph.py
 from __future__ import annotations
-from typing import List, Tuple, Dict, Iterable, Optional, Set
+
 import json
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 
-Triple = Tuple[str, str, str]
+Triple = tuple[str, str, str]
 
 _SENT_SPLIT = re.compile(r'(?<=[.!?])\s+')
 _WORD = re.compile(r"[A-Za-z0-9_]+")
 
-def _sentences(text: str) -> List[str]:
+def _sentences(text: str) -> list[str]:
     text = text.strip()
     return [s.strip() for s in _SENT_SPLIT.split(text) if s.strip()]
 
-def _simple_triples(sent: str) -> List[Triple]:
+def _simple_triples(sent: str) -> list[Triple]:
     """
     Rule-based triple extractor (very naive but useful for demos).
     Patterns:
@@ -25,7 +26,7 @@ def _simple_triples(sent: str) -> List[Triple]:
       - "<X> fits <Y>"                 -> (X, "fits", Y)
     """
     s = sent.strip()
-    triples: List[Triple] = []
+    triples: list[Triple] = []
 
     # is-a
     m = re.search(r"^([A-Z][\w\s-]{0,80}?)\s+is\s+(?:an?|the)\s+([\w\s-]{1,120})$", s, re.IGNORECASE)
@@ -50,15 +51,16 @@ def _simple_triples(sent: str) -> List[Triple]:
 
 class Graph:
     def __init__(self):
-        self.triples: List[Triple] = []
-        self.nodes: Set[str] = set()
-        self.adj: Dict[str, List[Tuple[str, str]]] = defaultdict(list)  # head -> [(rel, tail)]
+        self.triples: list[Triple] = []
+        self.nodes: set[str] = set()
+        self.adj: dict[str, list[tuple[str, str]]] = defaultdict(list)  # head -> [(rel, tail)]
 
     def add(self, triples: Iterable[Triple]):
         for h, r, t in triples:
             h, r, t = h.strip(), r.strip(), t.strip()
             self.triples.append((h, r, t))
-            self.nodes.add(h); self.nodes.add(t)
+            self.nodes.add(h)
+            self.nodes.add(t)
             self.adj[h].append((r, t))
 
     def build_from_texts(self, texts: Iterable[str]):
@@ -66,10 +68,10 @@ class Graph:
             for s in _sentences(txt):
                 self.add(_simple_triples(s))
 
-    def neighbors(self, node: str) -> List[Tuple[str,str]]:
+    def neighbors(self, node: str) -> list[tuple[str,str]]:
         return list(self.adj.get(node, []))
 
-    def find(self, pattern: str) -> List[Triple]:
+    def find(self, pattern: str) -> list[Triple]:
         rx = re.compile(pattern, re.IGNORECASE)
         return [(h,r,t) for (h,r,t) in self.triples if rx.search(h) or rx.search(r) or rx.search(t)]
 

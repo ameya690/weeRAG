@@ -1,7 +1,8 @@
 # wee/guard.py
 from __future__ import annotations
-from typing import Dict, Any, List
+
 import re
+from typing import Any
 
 EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 PHONE = re.compile(r"\b(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})\b")
@@ -33,7 +34,7 @@ class Guard:
     use, layer this with ML-based classifiers and human review.
     """
 
-    KNOWN_LIMITS: List[str] = [
+    KNOWN_LIMITS: list[str] = [
         "Obfuscated prompts (Unicode homoglyphs, base64, leetspeak)",
         "Novel injection techniques not covered by the pattern list",
         "High false-positive rate on benign text that happens to match patterns",
@@ -43,31 +44,34 @@ class Guard:
         "Credit card regex may match arbitrary long digit sequences",
     ]
 
-    def __init__(self, allowed_domains: List[str] = None):
+    def __init__(self, allowed_domains: list[str] = None):
         self.allowed = set(allowed_domains or [])
         self.injection_rx = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
 
-    def check_pii(self, text: str) -> List[str]:
+    def check_pii(self, text: str) -> list[str]:
         issues = []
         for rx in PII_HINTS:
             for _ in rx.finditer(text):
-                if rx is EMAIL: issues.append("email")
-                elif rx is PHONE: issues.append("phone")
-                else: issues.append("credit_card_like")
+                if rx is EMAIL:
+                    issues.append("email")
+                elif rx is PHONE:
+                    issues.append("phone")
+                else:
+                    issues.append("credit_card_like")
         return list(sorted(set(issues)))
 
-    def check_profanity(self, text: str) -> List[str]:
+    def check_profanity(self, text: str) -> list[str]:
         toks = set(w.lower() for w in re.findall(r"[A-Za-z']+", text))
         return sorted(list(BAD_WORDS & toks))
 
-    def check_injection(self, text: str) -> List[str]:
+    def check_injection(self, text: str) -> list[str]:
         hits = []
         for rx in self.injection_rx:
             if rx.search(text):
                 hits.append(rx.pattern)
         return hits
 
-    def check_links(self, text: str) -> List[str]:
+    def check_links(self, text: str) -> list[str]:
         if not self.allowed:
             return []
         hits = []
@@ -84,10 +88,14 @@ class Guard:
         Heuristic risk score in [0,1].
         """
         s = 0.0
-        if self.check_pii(text): s += 0.4
-        if self.check_injection(text): s += 0.4
-        if self.check_profanity(text): s += 0.1
-        if self.check_links(text): s += 0.1
+        if self.check_pii(text):
+            s += 0.4
+        if self.check_injection(text):
+            s += 0.4
+        if self.check_profanity(text):
+            s += 0.1
+        if self.check_links(text):
+            s += 0.1
         return min(1.0, s)
 
     def sanitize(self, text: str) -> str:
@@ -96,7 +104,7 @@ class Guard:
         t = CREDIT.sub("[card]", t)
         return t
 
-    def check(self, text: str) -> Dict[str, Any]:
+    def check(self, text: str) -> dict[str, Any]:
         return {
             "pii": self.check_pii(text),
             "profanity": self.check_profanity(text),

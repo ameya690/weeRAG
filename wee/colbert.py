@@ -12,7 +12,7 @@ via Contextualized Late Interaction over BERT" (SIGIR 2020).
 """
 from __future__ import annotations
 
-from typing import Callable, List, Tuple
+from collections.abc import Callable
 
 import numpy as np
 
@@ -23,7 +23,7 @@ class ColBERTIndex:
     def __init__(self, dim: int):
         self.dim = dim
         # Each entry: (doc_id, token_embeddings) where token_embeddings is (T, dim)
-        self._docs: List[Tuple[str, np.ndarray]] = []
+        self._docs: list[tuple[str, np.ndarray]] = []
 
     # ------------------------------------------------------------------
     # Indexing
@@ -54,8 +54,8 @@ class ColBERTIndex:
 
     def add_texts(
         self,
-        doc_ids: List[str],
-        texts: List[str],
+        doc_ids: list[str],
+        texts: list[str],
         encode_fn: Callable[[str], np.ndarray],
     ) -> None:
         """Encode texts with *encode_fn* and add them to the index.
@@ -102,7 +102,7 @@ class ColBERTIndex:
 
     def search(
         self, query_embeddings: np.ndarray, k: int = 5
-    ) -> List[Tuple[str, float]]:
+    ) -> list[tuple[str, float]]:
         """Score the query against every indexed document and return the top *k*.
 
         Parameters
@@ -122,7 +122,7 @@ class ColBERTIndex:
         norms = np.linalg.norm(query_embeddings, axis=1, keepdims=True) + 1e-9
         query_embeddings = query_embeddings / norms
 
-        scored: List[Tuple[str, float]] = []
+        scored: list[tuple[str, float]] = []
         for doc_id, doc_emb in self._docs:
             score = self.maxsim(query_embeddings, doc_emb)
             scored.append((doc_id, score))
@@ -135,7 +135,7 @@ class ColBERTIndex:
         query: str,
         encode_fn: Callable[[str], np.ndarray],
         k: int = 5,
-    ) -> List[Tuple[str, float]]:
+    ) -> list[tuple[str, float]]:
         """Convenience wrapper: encode *query* then search.
 
         Parameters

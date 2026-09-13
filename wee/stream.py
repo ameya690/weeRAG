@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 SSE streaming micro-server for token output (FastAPI/Starlette). Optional dependency.
 
@@ -11,18 +12,19 @@ If FastAPI isn't installed, pip install:
     pip install fastapi uvicorn
 """
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 try:
     from fastapi import FastAPI
     from fastapi.responses import StreamingResponse
-except Exception as e:
+except Exception:
     FastAPI = None
     StreamingResponse = None
 
 async def token_generator(text: str) -> AsyncGenerator[bytes, None]:
     for i, ch in enumerate(text):
         await asyncio.sleep(0.05)
-        yield f"data: {ch}\n\n".encode("utf-8")
+        yield f"data: {ch}\n\n".encode()
     yield b"data: [DONE]\n\n"
 
 if FastAPI is not None:
