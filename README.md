@@ -2,6 +2,8 @@
   <img width="350" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
 </p>
 
+[![CI](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml)
+
 **weeRAG** is a collection of small, readable implementations of building blocks behind  
 **LLMs** and **RAG** pipelines.  
 
@@ -180,11 +182,11 @@ PPL (fp32): 34.409
 Quantized size: {'parameters': 24320, 'bytes': 97280}
 PPL (int8): 34.432
 ```
-### KV Cache (wee.kv)
-Cache keys/values to accelerate generation.
-```yaml
-Generated: RAG retrieves context. Asouhn...
-Time with KV cache: 0.021 s
+### KV Cache (built into `wee.transformer.GPT`)
+KV caching is integrated into the transformer — no separate module needed.
+```python
+# KV caching happens automatically during .generate()
+out = model.generate(ids, max_new_tokens=50, temperature=1.0, top_k=20)
 ```
 ### Router (wee.router.Router)
 Route queries to models by quality, cost, or latency.

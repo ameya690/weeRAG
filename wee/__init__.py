@@ -8,7 +8,10 @@ from .chunk import (
     chunk_by_words,
     chunk_by_sentences,
     chunk_by_tokens,
+    chunk_by_semantic,
+    chunk_with_parents,
 )
+from .contextual import ContextualChunker
 
 # RAG kit
 from .vectorstore import VectorStore
@@ -27,6 +30,9 @@ __all__ = [
     "chunk_by_words",
     "chunk_by_sentences",
     "chunk_by_tokens",
+    "chunk_by_semantic",
+    "chunk_with_parents",
+    "ContextualChunker",
     "VectorStore",
     "Retriever",
     "pack_context",
@@ -61,3 +67,27 @@ from .synth import synth_qa
 from .guard import Guard
 
 __all__ += ["Graph", "synth_qa", "Guard"]
+
+# Agentic
+from .agent import Tool, SearchTool, AgentLoop
+
+__all__ += ["Tool", "SearchTool", "AgentLoop"]
+
+# Retrieval depth
+from .colbert import ColBERTIndex
+from .rewrite import rewrite_query, decompose_query, QueryExpander
+from .parent_retriever import ParentRetriever
+from .embed import (
+    Embedder, quantize_embeddings, dequantize_embeddings,
+    hamming_distance, binary_search,
+)
+from .hnsw import HNSWIndex
+
+__all__ += [
+    "ColBERTIndex",
+    "rewrite_query", "decompose_query", "QueryExpander",
+    "ParentRetriever",
+    "Embedder", "quantize_embeddings", "dequantize_embeddings",
+    "hamming_distance", "binary_search",
+    "HNSWIndex",
+]
