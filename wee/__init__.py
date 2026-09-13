@@ -1,10 +1,8 @@
 # wee/__init__.py
+#
+# Torch-dependent modules are guarded so the pure-numpy core
+# (vectorstore, retriever, bm25, rerank, eval, etc.) works without torch.
 
-from .attention import (
-    GroupedQueryAttention,
-    MultiHeadAttention,
-    scaled_dot_product_attention,
-)
 from .bm25 import BM25
 from .chunk import (
     chunk_by_semantic,
@@ -17,19 +15,9 @@ from .context import pack_context
 from .contextual import ContextualChunker
 from .rerank import Reranker
 from .retriever import Retriever
-from .tokenizer import Tokenizer
-from .transformer import GPT, GPTConfig
-
-# RAG kit
 from .vectorstore import VectorStore
 
 __all__ = [
-    "Tokenizer",
-    "scaled_dot_product_attention",
-    "GroupedQueryAttention",
-    "MultiHeadAttention",
-    "GPTConfig",
-    "GPT",
     "BM25",
     "chunk_by_words",
     "chunk_by_sentences",
@@ -42,6 +30,30 @@ __all__ = [
     "pack_context",
     "Reranker",
 ]
+
+# ── Torch-dependent modules ──────────────────────────────────────────────────
+
+try:
+    from .attention import (
+        GroupedQueryAttention,
+        MultiHeadAttention,
+        scaled_dot_product_attention,
+    )
+    from .tokenizer import Tokenizer
+    from .transformer import GPT, GPTConfig
+
+    __all__ += [
+        "Tokenizer",
+        "scaled_dot_product_attention",
+        "GroupedQueryAttention",
+        "MultiHeadAttention",
+        "GPTConfig",
+        "GPT",
+    ]
+except ImportError:
+    pass
+
+# ── Eval & ops ───────────────────────────────────────────────────────────────
 
 from .cache import Cache, SemanticCache, cached
 from .eval import (
@@ -64,29 +76,39 @@ __all__ += [
     "Tracer",
 ]
 
-# Wave 4
-from .quant import QuantLinear, eval_perplexity, quantize_model, size_report
-from .router import Router
-from .stream import app as stream_app
+# ── Performance & scaling (torch-dependent) ──────────────────────────────────
 
-__all__ += [
-    "QuantLinear", "quantize_model", "size_report", "eval_perplexity",
-    "Router", "stream_app",
-]
+try:
+    from .quant import QuantLinear, eval_perplexity, quantize_model, size_report
 
-# Wave 5
+    __all__ += ["QuantLinear", "quantize_model", "size_report", "eval_perplexity"]
+except ImportError:
+    pass
+
+try:
+    from .router import Router
+    from .stream import app as stream_app
+
+    __all__ += ["Router", "stream_app"]
+except ImportError:
+    pass
+
+# ── Knowledge & synthesis ────────────────────────────────────────────────────
+
 from .graph import Graph
 from .guard import Guard
 from .synth import synth_qa
 
 __all__ += ["Graph", "synth_qa", "Guard"]
 
-# Agentic
+# ── Agentic ──────────────────────────────────────────────────────────────────
+
 from .agent import AgentLoop, SearchTool, Tool
 
 __all__ += ["Tool", "SearchTool", "AgentLoop"]
 
-# Retrieval depth
+# ── Retrieval depth ──────────────────────────────────────────────────────────
+
 from .colbert import ColBERTIndex
 from .embed import (
     Embedder,
