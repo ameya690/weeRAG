@@ -32,10 +32,10 @@ __all__ = [
     "Reranker",
 ]
 
-from .weeeval import evaluate_qa, exact_match, max_f1, faithfulness, context_precision_recall
-from .weejudge import Judge, HeuristicJudge
-from .weecache import Cache, cached
-from .weetrace import Tracer
+from .eval import evaluate_qa, exact_match, max_f1, faithfulness, context_precision_recall
+from .judge import Judge, HeuristicJudge
+from .cache import Cache, cached
+from .trace import Tracer
 
 __all__ += [
     "evaluate_qa", "exact_match", "max_f1", "faithfulness", "context_precision_recall",

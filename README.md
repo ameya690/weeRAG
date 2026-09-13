@@ -127,7 +127,7 @@ Context packing fits the best chunks into a token budget.
 ## Evaluation & Ops
 Once you can retrieve & generate, you need to evaluate outputs and operate the system reliably.
 
-### Eval Metrics (wee.weeeval)
+### Eval Metrics (wee.eval)
 
 Exact Match (EM)
 
@@ -143,17 +143,17 @@ Output:
             "context_precision": 1.0, "context_recall": 1.0}
 ```
 
-### Judge (wee.weejudge.Judge)
+### Judge (wee.judge.Judge)
 Heuristic (embedding sim) or LLM-as-judge.
 ```rust
 What baseline...? -> score ≈ 0.51
 ```
-### Cache (wee.weecache.Cache)
+### Cache (wee.cache.Cache)
 SQLite-backed caching + decorator.
 ```yaml
 Cache hit: True
 ```
-### Tracer (wee.weetrace.Tracer)
+### Tracer (wee.trace.Tracer)
 Hierarchical spans with JSON or HTML export.
 ```yaml
 wee trace
