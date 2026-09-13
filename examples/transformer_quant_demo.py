@@ -1,10 +1,9 @@
 # Train wee GPT on a tiny corpus, then compare perplexity and generations
 # before/after int8 quantization.
-# Run: python examples/gpt_train_quant_demo.py
-import math, time, torch
+# Run: python examples/transformer_quant_demo.py
+import torch
 from wee import Tokenizer, GPTConfig, GPT
 from wee import eval_perplexity, quantize_model, size_report
-from wee import upgrade_gpt_for_kv, generate_with_cache
 
 # 1) Tiny corpus
 corpus = (
@@ -18,15 +17,14 @@ corpus = (
 )
 
 # 2) Tokenize
-tok = Tokenizer(); tok.train([corpus], vocab_size=1000)
-ids = torch.tensor(tok.encode(corpus), dtype=torch.long)    # shape [N]
+tok = Tokenizer()
+tok.train([corpus], vocab_size=1000)
+ids = torch.tensor(tok.encode(corpus), dtype=torch.long)
 
-# 3) Build model
-cfg = GPTConfig(vocab_size=tok.vocab_size, d_model=192, n_heads=4, n_layers=3, max_seq_len=256, dropout=0.1)
+# 3) Build model (GQA with 2 KV heads, SwiGLU, RoPE, RMSNorm — all built in)
+cfg = GPTConfig(vocab_size=tok.vocab_size, d_model=192, n_heads=4, n_kv_heads=2, n_layers=3, max_seq_len=256, dropout=0.1)
 model = GPT(cfg)
-upgrade_gpt_for_kv(model)   # swap in cacheable attention (weights preserved)
 
-# Helper to compute ppl on the corpus
 def ppl(m):
     return eval_perplexity(m, ids, tok.vocab_size, chunk_len=64)
 
@@ -40,12 +38,12 @@ print("PPL (init fp32):", round(ppl(model), 3))
 model.train()
 opt = torch.optim.AdamW(model.parameters(), lr=3e-3, weight_decay=0.01)
 T = 128
-steps = 600   # bump to 1500+ for better quality
+steps = 600
 for step in range(steps):
-    i = torch.randint(0, max(1, len(ids)-T-1), (1,)).item()
-    x = ids[i:i+T].unsqueeze(0)
-    y = ids[i+1:i+1+T].unsqueeze(0)
-    logits, loss = model(x, y)
+    i = torch.randint(0, max(1, len(ids) - T - 1), (1,)).item()
+    x = ids[i : i + T].unsqueeze(0)
+    y = ids[i + 1 : i + 1 + T].unsqueeze(0)
+    logits, loss, _ = model(x, y)
     opt.zero_grad(set_to_none=True)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -58,13 +56,10 @@ print("\n== Perplexity after training ==")
 ppl_trained = ppl(model)
 print("PPL (trained fp32):", round(ppl_trained, 3))
 
-# 5) Generate text (greedy or simple top-k sampling if available)
-def sample(model, prompt, max_new_tokens=80, temperature=0.8, top_k=40):
-    import torch
+# 5) Generate text (KV caching is built into model.generate)
+def sample(m, prompt, max_new_tokens=80, temperature=0.8, top_k=40):
     ids_in = torch.tensor([tok.encode(prompt, add_special=True)], dtype=torch.long)
-    # Use our KV-cache generator (works for fp32 and after quantization)
-    out = generate_with_cache(model, ids_in, max_new_tokens=max_new_tokens,
-                              temperature=temperature, top_k=top_k)
+    out = m.generate(ids_in, max_new_tokens=max_new_tokens, temperature=temperature, top_k=top_k)
     return tok.decode(out[0].tolist())
 
 prompt = "How do I get relevant passages for a question?"
