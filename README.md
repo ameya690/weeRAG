@@ -3,6 +3,7 @@
 </p>
 
 [![CI](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml)
+[![Bench](https://github.com/ameya690/weeRAG/actions/workflows/bench.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/bench.yml)
 
 **weeRAG** — small, readable implementations of the building blocks behind LLMs and RAG pipelines.
 
@@ -143,6 +144,23 @@ python demo/app.py
 ```
 
 No model downloads or API keys needed — uses a built-in corpus with hash-based embeddings.
+
+---
+
+## Benchmarks
+
+Evaluate the full retrieval stack on [HotpotQA](https://hotpotqa.github.io/) (500 questions, seed=42).
+
+```bash
+pip install -e ".[bench]"
+make bench
+```
+
+Results compare 8 pipeline configurations across three tiers — from zero-cost BM25 through cross-encoder reranking to LLM-augmented contextual and agentic retrieval — reporting nDCG@10, Recall@20, MRR@10, latency, and cost per query.
+
+Benchmark outputs are cached so the full suite runs without an API key. Use `--no-cache` with `ANTHROPIC_API_KEY` set to re-run LLM stages live.
+
+See [`bench/run.py`](bench/run.py) for methodology and [`bench/cache/`](bench/cache/) for cached LLM outputs.
 
 ---
 

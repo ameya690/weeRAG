@@ -12,3 +12,4 @@ wee_trace.html
 *.sqlite
 .venv/
 venv/
+bench/results.json

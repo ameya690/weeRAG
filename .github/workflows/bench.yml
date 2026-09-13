@@ -1,0 +1,38 @@
+name: Bench
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "wee/**"
+      - "bench/**"
+      - "pyproject.toml"
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package with bench extras
+        run: pip install -e ".[bench]"
+
+      - name: Run cached benchmarks
+        run: python bench/run.py --stages bm25 dense hybrid rerank
+
+      - name: Check regression thresholds
+        run: |
+          if [ -f bench/thresholds.json ]; then
+            echo "Thresholds file found — regression check ran as part of bench/run.py"
+          else
+            echo "No thresholds file yet — skipping regression gate"
+          fi
