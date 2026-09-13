@@ -56,6 +56,24 @@ class VectorStore:
         md = list(metadata) if metadata is not None else [{} for _ in range(vecs.shape[0])]
         self.add(vecs, ids=ids, metadata=md)
 
+    def delete(self, ids: Iterable[str]) -> int:
+        """Remove vectors by ID. Returns the count of actually deleted entries."""
+        self._flush()
+        to_delete = {doc_id for doc_id in ids if doc_id in self._id_index}
+        if not to_delete:
+            return 0
+
+        keep = [i for i, doc_id in enumerate(self.ids) if doc_id not in to_delete]
+        self.ids = [self.ids[i] for i in keep]
+        self.metadata = [self.metadata[i] for i in keep]
+        if self.vectors is not None and len(keep) > 0:
+            self.vectors = self.vectors[keep]
+        elif len(keep) == 0:
+            self.vectors = None
+
+        self._id_index = {doc_id: i for i, doc_id in enumerate(self.ids)}
+        return len(to_delete)
+
     def _cosine_scores(self, q: np.ndarray) -> np.ndarray:
         self._flush()
         q = q.astype(np.float32).reshape(1, -1)
