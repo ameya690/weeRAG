@@ -4,33 +4,9 @@
 
 [![CI](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml)
 
-**weeRAG** is a collection of small, readable implementations of building blocks behind  
-**LLMs** and **RAG** pipelines.  
+**weeRAG** — small, readable implementations of the building blocks behind LLMs and RAG pipelines.
 
-The intent is clarity: Each component is implemented in a single file, with minimal dependencies.
-
----
-
-## 📑 Table of Contents
-
-- [Overview](#overview)
-- [Installation](#installation)
-- [1. Foundations](#1-foundations)
-- [2. RAG Toolkit](#2-rag-toolkit)
-- [3. Evaluation & Ops](#3-evaluation--ops)
-- [4. Performance & Scaling](#4-performance--scaling)
-- [5. Extras](#5-extras)
-- [License](#license)
-
----
-
-## Overview
-
-- **Foundations** → the *core primitives*: tokenization, transformers, attention, lexical retrieval, chunking.  
-- **RAG Toolkit** → vector stores, retrievers, context packing, rerankers.  
-- **Evaluation & Ops** → metrics, judges, caches, tracing.  
-- **Performance & Scaling** → quantization, KV caches, routers, streaming.  
-- **Extras** → knowledge graphs, synthetic eval data, guardrails.
+Every component lives in a single file with minimal dependencies. The goal isn't a framework — it's a codebase you can read end-to-end in an afternoon and actually understand what each piece does, why it exists, and where the tradeoffs are.
 
 ---
 
@@ -42,8 +18,6 @@ cd weeRAG
 pip install -e .
 ```
 
-With optional extras:
-
 ```bash
 pip install -e ".[retrieval]"   # cross-encoder reranking, embeddings
 pip install -e ".[demo]"        # Gradio demo app
@@ -51,182 +25,140 @@ pip install -e ".[dev]"         # ruff, pytest
 ```
 
 ---
-## 1. Foundations
 
-Core LLM building blocks. Minimal, readable versions of what production frameworks do at scale.
+## The Retrieval Stack
 
-Tokenizer (wee.tokenizer.Tokenizer)
+The modules build on each other. Each step in the progression is a separate file you can read independently.
 
-Char-BPE with ▁ word-boundary markers.
+| Stage | Module | What it does | When to use it |
+|-------|--------|-------------|----------------|
+| **Lexical baseline** | `wee.bm25` | Bag-of-words ranking (TF-IDF variant) | Always — it's your sanity-check baseline |
+| **Dense retrieval** | `wee.vectorstore` + `wee.retriever` | Cosine search over embeddings, top-k / MMR / RRF strategies | When semantic similarity matters more than keyword overlap |
+| **Hybrid (RRF)** | `wee.retriever` | Reciprocal Rank Fusion of dense + BM25 | Usually better than either alone, nearly free to add |
+| **Cross-encoder rerank** | `wee.rerank` | Score (query, doc) pairs jointly | The single biggest quality lever — 2nd-stage over a candidate set |
+| **Contextual retrieval** | `wee.contextual` | Prepend LLM-generated context blurb to chunks before embedding | Dramatic improvement when chunks lack self-contained context |
+| **Query expansion** | `wee.rewrite` | Rewrite, decompose, or multi-rewrite queries before search | Complex or ambiguous queries; multi-hop questions |
+| **Agentic retrieval** | `wee.agent` | ReAct loop — the model decides what to search and when to stop | Multi-hop questions where a single retrieve-then-generate pass isn't enough |
+| **ColBERT (late interaction)** | `wee.colbert` | Per-token MaxSim scoring instead of single-vector | When token-level matching matters and you can afford the storage |
 
-```python
-from wee import Tokenizer
-tok = Tokenizer()
-tok.train(["hello world", "hello there"], vocab_size=200)
-ids = tok.encode("hello world", add_special=True)
-print(ids)             # -> [2, 29, 12, ..., 25, 3]
-print(tok.decode(ids)) # -> "hello world"
-```
-```yaml
-Encoded IDs: [2, 29, 12, ..., 25, 3]
-Decoded: attention retrieves chunks
-```
+Every module accepts plain callables (`embed_fn`, `generate_fn`, `cross_encoder_fn`) — no LLM library lock-in.
 
-### Attention (wee.attention.MultiHeadAttention)
+---
 
-PyTorch multi-head attention with causal mask.
+## Foundations
 
-### Transformer (wee.transformer.GPT)
+| Module | Description |
+|--------|-------------|
+| `wee.tokenizer` | Char-BPE tokenizer with word-boundary markers, train/encode/decode |
+| `wee.attention` | Multi-head attention and grouped-query attention (GQA) with `F.scaled_dot_product_attention` |
+| `wee.transformer` | GPT-style decoder: RMSNorm, RoPE, SwiGLU, GQA, native KV cache, `.generate()` |
+| `wee.chunk` | Word, sentence, token, and **semantic** chunking (split on embedding similarity breakpoints) |
+| `wee.chunk` | **Parent-document** chunking — two-level hierarchy for retrieve-on-child, return-parent |
 
-Minimal GPT-style decoder with .generate().
+---
 
-```yaml
-Model params: 675840
-```
-### BM25 (wee.bm25.BM25)
+## Retrieval & Search
 
-Lexical retriever baseline.
-```python
-BM25 search: [(1, 1.105...), (0, 0.980...)]
-```
+| Module | Description |
+|--------|-------------|
+| `wee.vectorstore` | In-memory dense index — add, search, delete, metadata filtering, save/load |
+| `wee.retriever` | Retrieval strategies: top-k, MMR (diversity), RRF (hybrid fusion) |
+| `wee.rerank` | Reranking modes: dense, lexical, hybrid, **cross-encoder**, cross-encoder+hybrid |
+| `wee.contextual` | `ContextualChunker` — LLM-generated blurbs before embedding |
+| `wee.rewrite` | `QueryExpander` — rewrite, decompose, multi-rewrite, search-with-expansion |
+| `wee.agent` | `AgentLoop` with `SearchTool` — ReAct-style agentic retrieval |
+| `wee.colbert` | `ColBERTIndex` — late-interaction retrieval with per-token MaxSim |
+| `wee.parent_retriever` | `ParentRetriever` — retrieve on fine-grained children, return coarse parents |
+| `wee.embed` | `Embedder` adapter with Matryoshka truncation + int8/binary quantization |
+| `wee.hnsw` | Toy HNSW index — approximate nearest neighbors with recall-vs-latency tradeoff |
+| `wee.context` | Budget-aware context packing into the LLM's window |
 
-### Chunking (wee.chunk)
-Word, sentence, or token-based chunkers for long documents
-```python
-Sentence chunks: ['This is a sentence.', 'ence. Another sentence!', 'ence! And one more? Yep.']
-```
-## RAG Toolkit
-Pieces to assemble an end-to-end retrieval pipeline.
-
-### VectorStore (wee.vectorstore.VectorStore)
-
-In-memory dense vector index with cosine search.
-
-### Retriever (wee.retriever.Retriever)
-
-Strategies:
-
-topk — standard dense retrieval
-
-mmr — Maximal Marginal Relevance (balances relevance & diversity)
-
-rrf — Reciprocal Rank Fusion (combine dense + lexical)
-
-```python
-Dense hits: [('2-0', 0.04, 'BM25 ...'), ('1-0', ...)]
-MMR hits: [('2-0', ...), ('1-0', ...)]
-RRF hits: [('2-0', ...), ('0-0', 'RAG retrieves ...')]
-```
-
-### Reranker (wee.rerank.Reranker)
-Re-score retrieved candidates with dense, lexical, or hybrid.
-
-```python
-Reranked: [('Context packing ...'), ('BM25 ...'), ('RAG retrieves ...')]
-``` 
-
-### Context (wee.context.pack_context)
-Budgeted packing of chunks into the LLM’s context window.
-```yaml
--- Packed Context ---
-Context packing fits the best chunks into a token budget.
-```
+---
 
 ## Evaluation & Ops
-Once you can retrieve & generate, you need to evaluate outputs and operate the system reliably.
 
-### Eval Metrics (wee.eval)
+| Module | Description |
+|--------|-------------|
+| `wee.eval` | EM, F1, faithfulness, **groundedness** (per-sentence detail), **citation support**, context precision/recall |
+| `wee.judge` | Heuristic or LLM-as-judge scoring |
+| `wee.cache` | SQLite-backed exact cache + **`SemanticCache`** (embedding similarity matching) |
+| `wee.trace` | Hierarchical spans — JSON, HTML, and **OpenTelemetry GenAI** export with W3C trace context |
+| `wee.guard` | PII detection, profanity, prompt-injection (regex baseline with [documented limits](wee/guard.py)), link allowlist |
 
-Exact Match (EM)
+---
 
-F1 overlap
-
-Faithfulness (are answers supported by context?)
-
-Context precision/recall
-
-Output:
-```yaml
-"metrics": {"em": 0.5, "f1": 0.611, "faithfulness": 0.5,
-            "context_precision": 1.0, "context_recall": 1.0}
-```
-
-### Judge (wee.judge.Judge)
-Heuristic (embedding sim) or LLM-as-judge.
-```rust
-What baseline...? -> score ≈ 0.51
-```
-### Cache (wee.cache.Cache)
-SQLite-backed caching + decorator.
-```yaml
-Cache hit: True
-```
-### Tracer (wee.trace.Tracer)
-Hierarchical spans with JSON or HTML export.
-```yaml
-wee trace
-pipeline (0.032s)
-  index (0.030s)
-  retrieve (0.000s)
-  rerank (0.000s)
-  pack (0.001s)
-```
 ## Performance & Scaling
-Toy versions of tricks used in production LLMs for speed & efficiency.
 
-### Quantization (wee.quant)
-Post-training int8/int4 quantization of linear layers.
-```yaml
-Float32 size: {'parameters': 684032, 'bytes': 2736128}
-PPL (fp32): 34.409
-Quantized size: {'parameters': 24320, 'bytes': 97280}
-PPL (int8): 34.432
-```
-### KV Cache (built into `wee.transformer.GPT`)
-KV caching is integrated into the transformer — no separate module needed.
+| Module | Description |
+|--------|-------------|
+| `wee.quant` | Post-training int8/int4 quantization of linear layers with perplexity measurement |
+| `wee.router` | Route queries to models by quality, cost, or latency |
+| `wee.stream` | FastAPI SSE server for token streaming |
+| `wee.graph` | Knowledge graph: extract triples, explore, export DOT/JSON |
+| `wee.synth` | Synthetic QA generation (cloze + WH questions) for eval sets |
+
+---
+
+## Quick Example
+
 ```python
-# KV caching happens automatically during .generate()
-out = model.generate(ids, max_new_tokens=50, temperature=1.0, top_k=20)
+from wee import VectorStore, Retriever, BM25, Reranker, pack_context
+
+# 1. Index
+docs = ["RAG retrieves relevant context.", "BM25 is a lexical baseline.", "Cross-encoders score pairs jointly."]
+embed_fn = lambda t: __import__('numpy').random.RandomState(hash(t) % 2**31).randn(64).astype('float32')
+
+vs = VectorStore(dim=64)
+vs.add_texts(docs, embed_fn, ids=["d0", "d1", "d2"])
+
+bm25 = BM25()
+bm25.add(docs)
+
+# 2. Hybrid retrieve
+ret = Retriever(method="rrf", k=3)
+ret.attach_vectorstore(vs, embed_fn).attach_bm25(bm25)
+hits = ret.search("How does lexical retrieval work?")
+
+# 3. Rerank with cross-encoder
+reranker = Reranker(mode="cross_encoder")
+reranker.attach_cross_encoder(lambda q, d: len(set(q.lower().split()) & set(d.lower().split())) / len(set(q.lower().split()) | set(d.lower().split())))
+texts = {id: doc for id, doc in zip(["d0", "d1", "d2"], docs)}
+reranked = reranker.rerank("How does lexical retrieval work?", hits, texts, k=3)
+
+# 4. Pack context
+packed = pack_context([texts[id] for id, _, _ in reranked], max_tokens=100)
 ```
-### Router (wee.router.Router)
-Route queries to models by quality, cost, or latency.
-```yaml
-Decision (quality): endpoint=mini, est_cost=0.022
-Decision (cost): endpoint=mini, est_cost=0.044
+
+---
+
+## Interactive Demo
+
+Compare dense, hybrid, and reranked retrieval side by side with latency and pipeline traces.
+
+```bash
+pip install -e ".[demo]"
+python demo/app.py
 ```
-### Streaming (wee.stream)
-Minimal FastAPI SSE server to stream tokens.
-```python
-uvicorn wee.stream:app --reload
-GET /stream?text=hello
+
+No model downloads or API keys needed — uses a built-in corpus with hash-based embeddings.
+
+---
+
+## Tests
+
+```bash
+pip install -e ".[dev]"
+pytest -v
 ```
-## Extras
-Beyond the basics: tools that make RAG practical and safer.
-### Knowledge Graph (wee.graph.Graph)
-Extract triples from text; explore & export DOT/JSON.
-```yaml
-Triples:
-  (Transformers) -[->]-> (Tokens)
-```
-### Synthetic QA (wee.synth.synth_qa)
-Generate tiny cloze/WH questions from context to build eval sets.
-```yaml
-CLOZE Q: Vector stores ____ similarity search.  A: ['enable']
-CLOZE Q: ____ is a lexical baseline.            A: ['BM25']
-WH Q:    What does RAG retrieve?                A: ['relevant context']
-```
-### Guard (wee.guard.Guard)
-Check for PII, profanity, prompt-injection, or untrusted links.
-```rust
-Report: {'pii': ['email','phone'],
-         'injection': ['ignore ...','act as administrator'],
-         'unallowed_links': ['https://evil.com/model.bin'], 'risk': 0.9}
-Sanitized:
- Contact me at [email] or [phone].
-```
+
+12 test files covering vectorstore, BM25, chunking, eval metrics, reranker, cache, ColBERT, embedder, HNSW, query rewriting, and guard (with injection TP/FP rate documentation).
+
+---
+
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE)
 
-## Contributing  
-Pull requests are welcome!  
+## Contributing
+
+Pull requests are welcome.
