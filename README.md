@@ -2,6 +2,8 @@
   <img width="350" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
 </p>
 
+[![CI](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml)
+
 **weeRAG** is a collection of small, readable implementations of building blocks behind  
 **LLMs** and **RAG** pipelines.  
 
@@ -35,12 +37,18 @@ The intent is clarity: Each component is implemented in a single file, with mini
 ## Installation
 
 ```bash
-git clone <your-fork-or-repo> weeRAG
+git clone https://github.com/ameya690/weeRAG.git
 cd weeRAG
 pip install -e .
 ```
 
-FastAPI + Uvicorn for streaming demos
+With optional extras:
+
+```bash
+pip install -e ".[retrieval]"   # cross-encoder reranking, embeddings
+pip install -e ".[demo]"        # Gradio demo app
+pip install -e ".[dev]"         # ruff, pytest
+```
 
 ---
 ## 1. Foundations
@@ -127,7 +135,7 @@ Context packing fits the best chunks into a token budget.
 ## Evaluation & Ops
 Once you can retrieve & generate, you need to evaluate outputs and operate the system reliably.
 
-### Eval Metrics (wee.weeeval)
+### Eval Metrics (wee.eval)
 
 Exact Match (EM)
 
@@ -143,17 +151,17 @@ Output:
             "context_precision": 1.0, "context_recall": 1.0}
 ```
 
-### Judge (wee.weejudge.Judge)
+### Judge (wee.judge.Judge)
 Heuristic (embedding sim) or LLM-as-judge.
 ```rust
 What baseline...? -> score ≈ 0.51
 ```
-### Cache (wee.weecache.Cache)
+### Cache (wee.cache.Cache)
 SQLite-backed caching + decorator.
 ```yaml
 Cache hit: True
 ```
-### Tracer (wee.weetrace.Tracer)
+### Tracer (wee.trace.Tracer)
 Hierarchical spans with JSON or HTML export.
 ```yaml
 wee trace
@@ -174,11 +182,11 @@ PPL (fp32): 34.409
 Quantized size: {'parameters': 24320, 'bytes': 97280}
 PPL (int8): 34.432
 ```
-### KV Cache (wee.kv)
-Cache keys/values to accelerate generation.
-```yaml
-Generated: RAG retrieves context. Asouhn...
-Time with KV cache: 0.021 s
+### KV Cache (built into `wee.transformer.GPT`)
+KV caching is integrated into the transformer — no separate module needed.
+```python
+# KV caching happens automatically during .generate()
+out = model.generate(ids, max_new_tokens=50, temperature=1.0, top_k=20)
 ```
 ### Router (wee.router.Router)
 Route queries to models by quality, cost, or latency.
@@ -216,5 +224,9 @@ Report: {'pii': ['email','phone'],
 Sanitized:
  Contact me at [email] or [phone].
 ```
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 ## Contributing  
 Pull requests are welcome!  
