@@ -1,6 +1,4 @@
-<p align="center">
-  <img width="350" alt="weeRAG logo" src="https://github.com/user-attachments/assets/3c808464-ef6b-497f-a46c-d7b90edf9a7c" />
-</p>
+
 
 [![CI](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/ci.yml)
 [![Bench](https://github.com/ameya690/weeRAG/actions/workflows/bench.yml/badge.svg)](https://github.com/ameya690/weeRAG/actions/workflows/bench.yml)
