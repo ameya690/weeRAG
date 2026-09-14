@@ -131,7 +131,7 @@ def load_hotpotqa(subset: int, seed: int) -> tuple[dict[str, str], list[dict]]:
     except ImportError:
         sys.exit("Install datasets: pip install -e '.[bench]'")
 
-    ds = load_dataset("hotpot_qa", "distractor", split="validation", trust_remote_code=True)
+    ds = load_dataset("hotpotqa/hotpot_qa", "distractor", split="validation")
     ds = ds.shuffle(seed=seed).select(range(min(subset, len(ds))))
 
     corpus: dict[str, str] = {}
@@ -275,7 +275,7 @@ def run_stage(
     cost_tracker=None,
 ) -> dict:
     """Run a single pipeline stage and return metrics."""
-    from wee import AgentLoop, QueryExpander, Reranker, Retriever, SearchTool
+    from wee import AgentLoop, QueryExpander, Reranker, Retriever
 
     K_RETRIEVE = 20
     latencies: list[float] = []
@@ -382,25 +382,35 @@ def run_stage(
             mrrs.append(mrr_at_k(retrieved, q["gold_ids"], 10))
 
     elif stage_name == "agentic":
+        from wee import Tool as WeeTool
+
         ret = Retriever(method="rrf", k=10)
         ret.attach_vectorstore(vs, embed_fn).attach_bm25(bm25)
-        search_tool = SearchTool(ret, texts_by_id)
-        agent = AgentLoop(generate_fn=llm_fn, tools=[search_tool], max_steps=3)
+
         for q in queries:
+            collected_ids: list[str] = []
+
+            def _tracking_search(query_str: str) -> str:
+                hits = ret.search(query_str)
+                if not hits:
+                    return "No results found."
+                parts = []
+                for rank, (doc_id, score, _meta) in enumerate(hits, 1):
+                    if doc_id not in collected_ids:
+                        collected_ids.append(doc_id)
+                    text = texts_by_id.get(doc_id, "(text unavailable)")
+                    parts.append(f"[{rank}] (score {score:.4f}) {text}")
+                return "\n".join(parts)
+
+            tool = WeeTool("search", "Search the knowledge base", _tracking_search)
+            agent = AgentLoop(generate_fn=llm_fn, tools=[tool], max_steps=3)
+
             t0 = time.perf_counter()
-            result = agent.run(q["question"])
-            all_retrieved: list[str] = []
-            for step in result.get("steps", []):
-                obs = step.get("observation", "")
-                for pid in corpus:
-                    if pid in all_retrieved:
-                        continue
-                    if corpus[pid][:60] in obs:
-                        all_retrieved.append(pid)
+            agent.run(q["question"])
             latencies.append(time.perf_counter() - t0)
-            ndcgs.append(ndcg_at_k(all_retrieved, q["gold_ids"], 10))
-            recalls.append(recall_at_k(all_retrieved, q["gold_ids"], 20))
-            mrrs.append(mrr_at_k(all_retrieved, q["gold_ids"], 10))
+            ndcgs.append(ndcg_at_k(collected_ids, q["gold_ids"], 10))
+            recalls.append(recall_at_k(collected_ids, q["gold_ids"], 20))
+            mrrs.append(mrr_at_k(collected_ids, q["gold_ids"], 10))
 
     else:
         raise ValueError(f"Unknown stage: {stage_name}")

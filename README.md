@@ -151,18 +151,27 @@ No model downloads or API keys needed — uses a built-in corpus with hash-based
 
 ## Benchmarks
 
-Evaluate the full retrieval stack on [HotpotQA](https://hotpotqa.github.io/) (500 questions, seed=42).
+Retrieval quality on [HotpotQA](https://hotpotqa.github.io/) (500 questions, seed=42). Embedding: `all-MiniLM-L6-v2`. Cross-encoder: `ms-marco-MiniLM-L-6-v2`. LLM: Claude Haiku 4.5.
+
+| | Stage | nDCG@10 | Recall@20 | MRR@10 | p50 (ms) | $/query |
+|---|-------|---------|-----------|--------|----------|---------|
+| **Baselines** | BM25 | 0.759 | 0.929 | 0.850 | 16.8 | — |
+| | Dense (cosine) | 0.756 | 0.871 | 0.876 | 39.7 | — |
+| | Hybrid (RRF) | 0.783 | 0.941 | 0.873 | 60.3 | — |
+| **Reranking** | Cross-encoder rerank | **0.860** | **0.941** | **0.943** | 794.5 | — |
+| | Query expansion + hybrid | 0.794 | 0.939 | 0.870 | 890.1 | $0.0001 |
+| **LLM-augmented** | Contextual retrieval | 0.796 | 0.936 | 0.896 | 58.5 | $0.0042 |
+| | Contextual + rerank | 0.859 | 0.936 | 0.942 | 777.4 | $0.0042 |
+
+Cross-encoder reranking is the single biggest quality lever: **+10 nDCG** over hybrid for ~13x latency and zero LLM cost. Contextual retrieval improves MRR but only matches reranking when combined with it — at $0.0042/query in LLM calls. Query expansion adds +1 nDCG over vanilla hybrid: marginal for most use cases.
 
 ```bash
 pip install -e ".[bench]"
-make bench
+make bench                  # reproduce with cached LLM outputs
+make bench ARGS=--no-cache  # re-run LLM stages live (needs ANTHROPIC_API_KEY)
 ```
 
-Results compare 8 pipeline configurations across three tiers — from zero-cost BM25 through cross-encoder reranking to LLM-augmented contextual and agentic retrieval — reporting nDCG@10, Recall@20, MRR@10, latency, and cost per query.
-
-Benchmark outputs are cached so the full suite runs without an API key. Use `--no-cache` with `ANTHROPIC_API_KEY` set to re-run LLM stages live.
-
-See [`bench/run.py`](bench/run.py) for methodology and [`bench/cache/`](bench/cache/) for cached LLM outputs.
+See [`bench/run.py`](bench/run.py) for methodology and [`bench/cache/`](bench/cache/) for cached outputs.
 
 ---
 
